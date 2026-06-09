@@ -283,23 +283,36 @@ export default function CriarPage() {
   }
 
   /* ── File selected → loading with valid object URL ── */
-  const handleFile = useCallback((file: File) => {
+  const handleFile = useCallback(async (file: File) => {
     const objectUrl = URL.createObjectURL(file)
-    setPhotoPreview(objectUrl)   // valid URL, safe for <img src>
+    setPhotoPreview(objectUrl)
     setIsLoadingPhoto(true)
     setErrors((p) => ({ ...p, photo: '' }))
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const b64 = e.target?.result as string
-      setTimeout(() => {
-        URL.revokeObjectURL(objectUrl)
-        setPhoto(b64)
-        setPhotoPreview(null)
-        setIsLoadingPhoto(false)
-      }, 1900)
+    // Use canvas to bake EXIF orientation into the base64 — prevents sideways photos
+    let b64: string
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+      const canvas = document.createElement('canvas')
+      canvas.width = bitmap.width
+      canvas.height = bitmap.height
+      canvas.getContext('2d')!.drawImage(bitmap, 0, 0)
+      bitmap.close()
+      b64 = canvas.toDataURL('image/jpeg', 0.85)
+    } catch {
+      b64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = (e) => resolve(e.target?.result as string)
+        reader.readAsDataURL(file)
+      })
     }
-    reader.readAsDataURL(file)
+
+    setTimeout(() => {
+      URL.revokeObjectURL(objectUrl)
+      setPhoto(b64)
+      setPhotoPreview(null)
+      setIsLoadingPhoto(false)
+    }, 1900)
   }, [])
 
   /* ── Navigation ── */
