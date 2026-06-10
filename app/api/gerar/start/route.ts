@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as fs from 'fs'
+import * as path from 'path'
 
-const FLUX_VERSION = '897a70f5a7dbd8a0611413b3b98cf417b45f266bd595c571a22947619d9ae462'
-
-const JERSEY_PROMPT = `Full upper body portrait, front-facing pose, person looking directly at the camera, wearing a plain solid yellow jersey with green V-neck collar and green sleeve cuffs, NO logos, NO badges, NO text on the jersey — just plain yellow fabric. Arms relaxed and straight at the sides (NOT crossed, NOT folded).
-
-FACE — CRITICAL: preserve the face 100% identical to the input photo. Do NOT add beard, stubble, mustache, wrinkles, or ANY facial hair that does not exist in the original photo. If the person is a child, keep the child face exactly as-is. Do not age the person. Do not alter skin, hair, eyes, or expression.
-
-Studio photography, clean white background, soft professional studio lighting, sharp focus, photorealistic, ultra high resolution, 4K.`
+const INSWAPPER_VERSION = '25bdae46f2713138640b6e8c04dc4ca18625ce95b1863936b053eee42d9ba6db'
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +13,10 @@ export async function POST(req: NextRequest) {
     const photoBase64 = Buffer.from(await photo.arrayBuffer()).toString('base64')
     const mimeType = photo.type || 'image/jpeg'
 
+    // Carrega a imagem base do corpo do craque (já gerado e limpo com gola verde e logo da Nike)
+    const targetPath = path.join(process.cwd(), 'public/assets/jersey_body.png')
+    const targetBase64 = fs.readFileSync(targetPath).toString('base64')
+
     const res = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -24,15 +24,15 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: FLUX_VERSION,
+        version: INSWAPPER_VERSION,
         input: {
-          input_image:       `data:${mimeType};base64,${photoBase64}`,
-          prompt:            JERSEY_PROMPT,
-          aspect_ratio:      'match_input_image',
-          output_format:     'png',
-          output_quality:    100,
-          safety_tolerance:  3,
-          prompt_upsampling: true,
+          source_img: `data:${mimeType};base64,${photoBase64}`,
+          target_img: `data:image/png;base64,${targetBase64}`,
+          face_restore: true,
+          face_upsample: true,
+          background_enhance: true,
+          upscale: 1,
+          codeformer_fidelity: 0.7,
         },
       }),
     })

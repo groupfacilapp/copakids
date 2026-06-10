@@ -7,7 +7,7 @@ import { useFigurinhaStore, formatBirthDate, getPlayerNumber } from '@/lib/store
 import { FigurinhaCard } from '@/components/FigurinhaCard'
 import { Testimonials } from '@/components/Testimonials'
 
-const CHECKOUT_URL = 'https://pay.onprofit.com.br/SEU-LINK-AQUI'
+const CHECKOUT_URL = 'https://pay.kiwify.com.br/yRmTtd1'
 
 const TRUST_ITEMS = [
   { icon: '⚡', text: 'ACESSO LIBERADO NA HORA' },
@@ -261,7 +261,7 @@ export default function SuaFigurinhaPage() {
                     marginBottom: 2,
                   }}
                 >
-                  R$ 12,90
+                  R$ 19,90
                 </div>
 
                 <div
