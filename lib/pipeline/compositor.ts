@@ -26,6 +26,11 @@ const P1_Y1 = 1058, P1_Y2 = 1198
 const P2_Y1 = 1215, P2_Y2 = 1308
 const PILL_R = 26
 
+// Badge CBF — posição calibrada para portrait frontal full upper body
+const BADGE_CX = 390   // centro horizontal no espaço de 800px de foto
+const BADGE_CY = 695   // ~62% do eixo Y da foto (1115px)
+const BADGE_W  = 128   // largura do escudo
+
 export interface UserData {
   nome: string
   data: string
@@ -43,6 +48,98 @@ function autoFit(ctx: SKRSContext2D, text: string, targetSize: number, fontFamil
   return 12
 }
 
+function drawStar(ctx: SKRSContext2D, cx: number, cy: number, r: number) {
+  const inner = r * 0.38
+  ctx.beginPath()
+  for (let i = 0; i < 10; i++) {
+    const radius = i % 2 === 0 ? r : inner
+    const angle = (i * Math.PI) / 5 - Math.PI / 2
+    const px = cx + radius * Math.cos(angle)
+    const py = cy + radius * Math.sin(angle)
+    if (i === 0) ctx.moveTo(px, py)
+    else ctx.lineTo(px, py)
+  }
+  ctx.closePath()
+  ctx.fill()
+}
+
+function drawCBFBadge(ctx: SKRSContext2D, cx: number, cy: number, w: number) {
+  const h  = Math.round(w * 1.18)
+  const bx = cx - w / 2
+  const by = cy - h / 2
+  const r  = w * 0.11
+
+  // ── 5 estrelas acima do escudo ──────────────────────────────────────────
+  const starR   = w * 0.072
+  const starGap = w * 0.158
+  const starY   = by - starR * 1.5
+  ctx.fillStyle = '#119C4A'
+  for (let i = 0; i < 5; i++) {
+    drawStar(ctx, cx - 2 * starGap + i * starGap, starY, starR)
+  }
+
+  // ── Escudo azul (forma herálica: topo reto, base em V) ──────────────────
+  ctx.beginPath()
+  ctx.moveTo(bx + r, by)
+  ctx.lineTo(bx + w - r, by)
+  ctx.arcTo(bx + w, by,       bx + w, by + r,       r)
+  ctx.lineTo(bx + w, by + h * 0.62)
+  ctx.bezierCurveTo(bx + w, by + h * 0.87, cx + w * 0.18, by + h, cx, by + h)
+  ctx.bezierCurveTo(cx - w * 0.18, by + h, bx, by + h * 0.87, bx, by + h * 0.62)
+  ctx.lineTo(bx, by + r)
+  ctx.arcTo(bx, by,           bx + r, by,           r)
+  ctx.closePath()
+  ctx.fillStyle = '#0058A8'
+  ctx.fill()
+
+  // Borda branca fina
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)'
+  ctx.lineWidth = w * 0.022
+  ctx.stroke()
+
+  // ── Losango branco interno ───────────────────────────────────────────────
+  const dCX = cx
+  const dCY = by + h * 0.40
+  const dW  = w * 0.64
+  const dH  = h * 0.48
+
+  ctx.beginPath()
+  ctx.moveTo(dCX,          dCY - dH / 2)
+  ctx.lineTo(dCX + dW / 2, dCY)
+  ctx.lineTo(dCX,          dCY + dH / 2)
+  ctx.lineTo(dCX - dW / 2, dCY)
+  ctx.closePath()
+  ctx.fillStyle = '#ffffff'
+  ctx.fill()
+
+  // Cruz verde no losango
+  const lw = w * 0.038
+  ctx.strokeStyle = '#119C4A'
+  ctx.lineWidth = lw
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(dCX, dCY - dH / 2 + lw)
+  ctx.lineTo(dCX, dCY + dH / 2 - lw)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(dCX - dW / 2 + lw, dCY)
+  ctx.lineTo(dCX + dW / 2 - lw, dCY)
+  ctx.stroke()
+
+  // ── Texto "CBF" ─────────────────────────────────────────────────────────
+  ctx.font = `bold ${Math.round(w * 0.19)}px "Barlow"`
+  ctx.fillStyle = '#ffffff'
+  ctx.textAlign    = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('CBF', dCX, dCY)
+
+  // ── Texto "BRASIL" ───────────────────────────────────────────────────────
+  ctx.font = `bold ${Math.round(w * 0.15)}px "Barlow"`
+  ctx.fillStyle    = '#119C4A'
+  ctx.textBaseline = 'top'
+  ctx.fillText('BRASIL', cx, by + h * 0.77)
+}
+
 export async function compositeSticker(personPng: Buffer, data: UserData): Promise<Buffer> {
   registerFonts()
 
@@ -57,14 +154,13 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
 
   const cx = Math.round((newW - FOTO_X2) / 2)
 
-  // Redimensiona e centraliza
   const fotoResized = await sharp(personPng)
     .resize(newW, newH)
     .extract({ left: cx, top: 0, width: FOTO_X2, height: FOTO_Y2 })
     .png()
     .toBuffer()
 
-  // Máscara de fade vertical (alpha vai de 255 → 0 da parte de baixo)
+  // Máscara de fade vertical
   const fadeMap: number[] = []
   for (let y = 0; y < FOTO_Y2; y++) {
     for (let x = 0; x < FOTO_X2; x++) {
@@ -81,21 +177,23 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
     raw: { width: FOTO_X2, height: FOTO_Y2, channels: 4 },
   }).png().toBuffer()
 
-  // Aplica fade na foto (multiplica alpha)
   const fotoFaded = await sharp(fotoResized)
     .composite([{ input: fadeMask, blend: 'dest-in' }])
     .png()
     .toBuffer()
 
-  // ── 2. Compositar foto sobre o template via sharp ─────────────────────────
+  // ── 2. Compositar foto sobre o template ──────────────────────────────────
   const composited = await sharp(path.join(ASSETS, 'template.png'))
     .composite([{ input: fotoFaded, top: 0, left: 0 }])
     .png()
     .toBuffer()
 
-  // ── 3. Canvas: pills + texto em overlay transparente ─────────────────────
+  // ── 3. Canvas: escudo CBF + pills + texto ─────────────────────────────────
   const canvas = createCanvas(W, H)
   const ctx = canvas.getContext('2d')
+
+  // Escudo CBF sobre o peito
+  drawCBFBadge(ctx, BADGE_CX, BADGE_CY, BADGE_W)
 
   // Pills
   function pill(x1: number, y1: number, x2: number, y2: number) {
@@ -178,7 +276,7 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
 
   const overlayPng = canvas.toBuffer('image/png')
 
-  // ── 4. Compositar overlay (pills+texto) sobre a imagem ───────────────────
+  // ── 4. Compositar overlay sobre a imagem ─────────────────────────────────
   const finalBuffer = await sharp(composited)
     .composite([{ input: overlayPng }])
     .png()
