@@ -18,6 +18,7 @@ export interface FigurinhaData {
 }
 
 interface FigurinhaStore extends FigurinhaData {
+  generationId: number
   setName: (v: string) => void
   setPhoto: (v: string | null) => void
   setBirthDay: (v: string) => void
@@ -30,6 +31,7 @@ interface FigurinhaStore extends FigurinhaData {
   setStickerUrl: (v: string | null) => void
   setJobId: (v: string | null) => void
   setAll: (data: FigurinhaData) => void
+  nextGeneration: () => void
   reset: () => void
 }
 
@@ -49,8 +51,9 @@ const initial: FigurinhaData = {
 
 export const useFigurinhaStore = create<FigurinhaStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initial,
+      generationId: 0,
       setName: (name) => set({ name }),
       setPhoto: (photo) => set({ photo }),
       setBirthDay: (birthDay) => set({ birthDay }),
@@ -63,6 +66,7 @@ export const useFigurinhaStore = create<FigurinhaStore>()(
       setStickerUrl: (stickerUrl) => set({ stickerUrl }),
       setJobId: (jobId) => set({ jobId }),
       setAll: (data) => set(data),
+      nextGeneration: () => set({ generationId: get().generationId + 1 }),
       reset: () => set(initial),
     }),
     {

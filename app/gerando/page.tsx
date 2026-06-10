@@ -50,7 +50,7 @@ async function pollUntilDone(id: string, onProgress?: () => void): Promise<strin
 export default function GerandoPage() {
   const router = useRouter()
   const store  = useFigurinhaStore()
-  const called = useRef(false)
+  const called = useRef(-1)
 
   const [stage, setStage]     = useState<Stage>('flux_start')
   const [progress, setProgress] = useState(5)
@@ -79,8 +79,14 @@ export default function GerandoPage() {
 
   useEffect(() => {
     if (!store.name || !store.photo) { router.replace('/criar'); return }
-    if (called.current) return
-    called.current = true
+    if (called.current === store.generationId) return
+    called.current = store.generationId
+
+    // Reset visual state for new generation
+    setStage('flux_start')
+    setProgress(5)
+    setError(null)
+    setElapsed(0)
 
     async function run() {
       try {
@@ -165,7 +171,7 @@ export default function GerandoPage() {
 
     run()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [store.generationId])
 
   if (error) {
     return (
