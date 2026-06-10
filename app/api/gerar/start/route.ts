@@ -5,63 +5,75 @@ import * as fs from 'fs'
 
 const FLUX_VERSION = '897a70f5a7dbd8a0611413b3b98cf417b45f266bd595c571a22947619d9ae462'
 
-const JERSEY_PROMPT = `This image shows two panels side by side separated by a thin white border.
-LEFT PANEL: A reference photo showing the exact Brazil national football team jersey.
+const JERSEY_PROMPT = `This image has TWO equal-sized panels side by side, separated by a thin white line.
+LEFT PANEL: A reference photo showing exactly how the Brazil national team jersey looks.
 RIGHT PANEL: The person to edit.
 
-Your task: Edit the person in the RIGHT PANEL to wear the exact same Brazil jersey visible in the LEFT PANEL.
+Your task: Edit ONLY the RIGHT PANEL. Apply the exact Brazil jersey from the LEFT PANEL to the person in the RIGHT PANEL.
 
 Copy EXACTLY from the LEFT panel jersey:
-- Yellow-gold fabric color and texture
-- Deep green V-neck collar (double layer, same green on sleeve cuffs)
-- Nike swoosh on upper-left chest (green, large)
-- CBF crest on center chest: 5 stars above a blue shield, cross pattern inside, CBF text, BRASIL text below
-- All proportions and placement of logos
+- Yellow-gold fabric color and subtle texture
+- Deep green V-neck collar (wide V, double-layer, same green on sleeve cuffs)
+- Nike swoosh on the upper-LEFT area of chest (green, large, tilted)
+- CBF crest CENTERED on the chest (horizontally centered, below the Nike swoosh):
+  * 5 small stars in a row above the shield
+  * Blue shield with a cross/lozenge pattern inside
+  * "CBF" text inside the shield
+  * "BRASIL" text below the shield in green
+- The crest is in the CENTER of the chest, not to the side
 
 Preserve EXACTLY from the RIGHT panel:
-- The person's face, skin tone, eyes, hair — 100% identical
-- Body proportions and size (keep child proportions if the person is a child, keep adult proportions if adult)
-- Age appearance
+- The person's face, skin tone, eyes, hair — 100% unchanged
+- Age and body proportions (keep child proportions if the person is a child)
+- The person should be CENTERED horizontally in the frame
 
-Result for the RIGHT panel:
+Output for RIGHT PANEL:
 - Person wearing the Brazil jersey
 - Clean white studio background
 - Upright frontal pose, head straight, arms relaxed at sides
-- Photorealistic 4K quality, professional sports portrait`
+- Photorealistic 4K, professional sports portrait style`
+
+const PANEL_W = 512
 
 async function buildComposite(
   personBuffer: Buffer,
-): Promise<{ composite: Buffer; personX: number; totalW: number; totalH: number }> {
-  const refPath = path.join(process.cwd(), 'public/assets/jersey_ref.jpg')
+): Promise<{ composite: Buffer; personX: number; totalW: number }> {
+  const refPath = path.join(process.cwd(), 'public/assets/jersey_ref.png')
   const refBuffer = fs.readFileSync(refPath)
 
+  // Get person aspect ratio and determine panel height
   const personMeta = await sharp(personBuffer).metadata()
-  const personW = personMeta.width!
-  const personH = personMeta.height!
+  const personOrigW = personMeta.width!
+  const personOrigH = personMeta.height!
+  const panelH = Math.round(personOrigH * (PANEL_W / personOrigW))
 
-  const refMeta = await sharp(refBuffer).metadata()
-  const refW = Math.round(refMeta.width! * (personH / refMeta.height!))
+  // Resize person to PANEL_W x panelH
+  const personResized = await sharp(personBuffer)
+    .resize(PANEL_W, panelH)
+    .jpeg({ quality: 92 })
+    .toBuffer()
 
+  // Resize+cover reference to SAME dimensions as person panel (equal size panels)
   const refResized = await sharp(refBuffer)
-    .resize(refW, personH)
-    .jpeg({ quality: 95 })
+    .resize(PANEL_W, panelH, { fit: 'cover', position: 'centre' })
+    .jpeg({ quality: 92 })
     .toBuffer()
 
   const SEP = 8
-  const totalW = refW + SEP + personW
-  const personX = refW + SEP
+  const totalW = PANEL_W + SEP + PANEL_W // 1032
+  const personX = PANEL_W + SEP           // 520
 
   const composite = await sharp({
-    create: { width: totalW, height: personH, channels: 3, background: { r: 255, g: 255, b: 255 } },
+    create: { width: totalW, height: panelH, channels: 3, background: { r: 255, g: 255, b: 255 } },
   })
     .composite([
       { input: refResized, left: 0, top: 0 },
-      { input: personBuffer, left: personX, top: 0 },
+      { input: personResized, left: personX, top: 0 },
     ])
-    .jpeg({ quality: 95 })
+    .jpeg({ quality: 92 })
     .toBuffer()
 
-  return { composite, personX, totalW, totalH: personH }
+  return { composite, personX, totalW }
 }
 
 export async function POST(req: NextRequest) {
@@ -73,8 +85,6 @@ export async function POST(req: NextRequest) {
     const personBuffer = Buffer.from(await photo.arrayBuffer())
     const { composite, personX, totalW } = await buildComposite(personBuffer)
 
-    const compositeBase64 = composite.toString('base64')
-
     const res = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -84,7 +94,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         version: FLUX_VERSION,
         input: {
-          input_image: `data:image/jpeg;base64,${compositeBase64}`,
+          input_image: `data:image/jpeg;base64,${composite.toString('base64')}`,
           prompt: JERSEY_PROMPT,
           aspect_ratio: 'match_input_image',
           output_format: 'png',
