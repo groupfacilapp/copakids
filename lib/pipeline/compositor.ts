@@ -26,9 +26,9 @@ const P1_Y1 = 1058, P1_Y2 = 1198
 const P2_Y1 = 1215, P2_Y2 = 1308
 const PILL_R = 26
 
-// Posição do badge CBF (centro do peito, calibrado para portrait frontal)
-const BADGE_CX = 395
-const BADGE_CY = 690
+// Posição do badge CBF — centro da foto (800px) = x=400, ~57% do eixo Y da foto
+const BADGE_CX = 400
+const BADGE_CY = 640
 
 export interface UserData {
   nome: string
