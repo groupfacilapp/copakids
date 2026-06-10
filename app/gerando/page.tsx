@@ -7,6 +7,8 @@ import { useFigurinhaStore, formatBirthDate } from '@/lib/store'
 type Stage =
   | 'flux_start'
   | 'flux_poll'
+  | 'vton_start'
+  | 'vton_poll'
   | 'rembg_start'
   | 'rembg_poll'
   | 'finishing'
@@ -15,7 +17,9 @@ type Stage =
 
 const STAGE_MSG: Record<Stage, string> = {
   flux_start:   '⚡ Processando a foto do craque...',
-  flux_poll:    '🎽 Aplicando camiseta da Seleção Brasileira...',
+  flux_poll:    '🧍 Ajustando pose e camiseta base...',
+  vton_start:   '🎽 Aplicando camiseta oficial da Seleção...',
+  vton_poll:    '🇧🇷 Transferindo detalhes da camiseta...',
   rembg_start:  '✂️ Iniciando remoção do fundo...',
   rembg_poll:   '✂️ Removendo o fundo da foto...',
   finishing:    '🏆 Aplicando design Panini Copa 2026...',
@@ -26,9 +30,11 @@ const STAGE_MSG: Record<Stage, string> = {
 const STAGE_PCT: Record<Stage, number> = {
   flux_start:   5,
   flux_poll:    10,
-  rembg_start:  55,
-  rembg_poll:   60,
-  finishing:    88,
+  vton_start:   40,
+  vton_poll:    45,
+  rembg_start:  72,
+  rembg_poll:   76,
+  finishing:    91,
   done:         100,
   error:        0,
 }
@@ -115,13 +121,29 @@ export default function GerandoPage() {
         if (!startRes.ok) throw new Error((await startRes.json()).error)
         const { predictionId: fluxId } = await startRes.json()
 
-        // 2. Polling FLUX
+        // 2. Polling FLUX — pose + camiseta base
         setStage('flux_poll')
-        const jerseyUrl = await pollUntilDone(fluxId, () => {
-          setProgress((p) => Math.min(p + 0.5, 52))
+        const fluxUrl = await pollUntilDone(fluxId, () => {
+          setProgress((p) => Math.min(p + 0.5, 38))
         })
 
-        // 3. Inicia rembg
+        // 3. Inicia IDM-VTON — aplica camiseta de referência real
+        setStage('vton_start')
+        const step2Res = await fetch('/api/gerar/step2', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ humanImageUrl: fluxUrl }),
+        })
+        if (!step2Res.ok) throw new Error((await step2Res.json()).error)
+        const { predictionId: vtonId } = await step2Res.json()
+
+        // 4. Polling IDM-VTON
+        setStage('vton_poll')
+        const jerseyUrl = await pollUntilDone(vtonId, () => {
+          setProgress((p) => Math.min(p + 0.5, 70))
+        })
+
+        // 5. Inicia rembg
         setStage('rembg_start')
         const rembgRes = await fetch('/api/gerar/rembg', {
           method: 'POST',
@@ -131,13 +153,13 @@ export default function GerandoPage() {
         if (!rembgRes.ok) throw new Error((await rembgRes.json()).error)
         const { predictionId: rembgId } = await rembgRes.json()
 
-        // 4. Polling rembg
+        // 6. Polling rembg
         setStage('rembg_poll')
         const rembgUrl = await pollUntilDone(rembgId, () => {
-          setProgress((p) => Math.min(p + 0.5, 85))
+          setProgress((p) => Math.min(p + 0.5, 88))
         })
 
-        // 5. Compositor
+        // 7. Compositor
         setStage('finishing')
         const finishRes = await fetch('/api/gerar/finish', {
           method: 'POST',

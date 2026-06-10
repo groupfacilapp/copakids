@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import * as fs from 'fs'
-import * as path from 'path'
 
-const IDMVTON_VERSION = '0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985'
+const FLUX_VERSION = '897a70f5a7dbd8a0611413b3b98cf417b45f266bd595c571a22947619d9ae462'
+
+const JERSEY_PROMPT = `Full upper body portrait, front-facing pose, person looking directly at the camera, wearing a plain solid yellow jersey with green V-neck collar and green sleeve cuffs, NO logos, NO badges, NO text on the jersey — just plain yellow fabric. Arms relaxed and straight at the sides (NOT crossed, NOT folded).
+
+FACE — CRITICAL: preserve the face 100% identical to the input photo. Do NOT add beard, stubble, mustache, wrinkles, or ANY facial hair that does not exist in the original photo. If the person is a child, keep the child face exactly as-is. Do not age the person. Do not alter skin, hair, eyes, or expression.
+
+Studio photography, clean white background, soft professional studio lighting, sharp focus, photorealistic, ultra high resolution, 4K.`
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,12 +14,8 @@ export async function POST(req: NextRequest) {
     const photo = formData.get('photo') as File | null
     if (!photo) return NextResponse.json({ error: 'Foto obrigatória' }, { status: 400 })
 
-    const personBuffer = Buffer.from(await photo.arrayBuffer())
+    const photoBase64 = Buffer.from(await photo.arrayBuffer()).toString('base64')
     const mimeType = photo.type || 'image/jpeg'
-
-    // Garment: foto da camiseta da Seleção (referência real com badge, Nike, cores)
-    const garmentPath = path.join(process.cwd(), 'public/assets/jersey_garment.jpg')
-    const garmentBase64 = fs.readFileSync(garmentPath).toString('base64')
 
     const res = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
@@ -24,15 +24,15 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: IDMVTON_VERSION,
+        version: FLUX_VERSION,
         input: {
-          human_img:    `data:${mimeType};base64,${personBuffer.toString('base64')}`,
-          garm_img:     `data:image/jpeg;base64,${garmentBase64}`,
-          garment_des:  'Brazil national team yellow jersey with green V-neck collar, Nike swoosh, CBF badge with stars, BRASIL text',
-          category:     'upper_body',
-          crop:         true,
-          steps:        30,
-          seed:         42,
+          input_image:       `data:${mimeType};base64,${photoBase64}`,
+          prompt:            JERSEY_PROMPT,
+          aspect_ratio:      'match_input_image',
+          output_format:     'png',
+          output_quality:    100,
+          safety_tolerance:  3,
+          prompt_upsampling: true,
         },
       }),
     })
