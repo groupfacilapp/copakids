@@ -26,10 +26,6 @@ const P1_Y1 = 1058, P1_Y2 = 1198
 const P2_Y1 = 1215, P2_Y2 = 1308
 const PILL_R = 26
 
-// Fallback — usado se a detecção falhar
-const BADGE_CX_DEFAULT = 400
-const BADGE_CY_DEFAULT = 640
-
 export interface UserData {
   nome: string
   data: string
@@ -39,25 +35,6 @@ export interface UserData {
   watermark?: boolean
 }
 
-async function detectBadgePosition(fotoResized: Buffer): Promise<{ cx: number; cy: number }> {
-  try {
-    const { info } = await sharp(fotoResized)
-      .trim({ threshold: 10 })
-      .toBuffer({ resolveWithObject: true })
-    const personLeft = -Math.round((info as { trimOffsetLeft?: number }).trimOffsetLeft ?? 0)
-    const personTop  = -Math.round((info as { trimOffsetTop?: number }).trimOffsetTop  ?? 0)
-    const personW    = info.width
-    const personH    = info.height
-    // Badge no centro X da pessoa, ~57% da altura (peito superior), travado entre Y=625 e Y=680 para evitar garganta ou barriga
-    const cyRaw = personTop + Math.round(personH * 0.57)
-    return {
-      cx: personLeft + Math.round(personW / 2),
-      cy: Math.max(625, Math.min(680, cyRaw)),
-    }
-  } catch {
-    return { cx: BADGE_CX_DEFAULT, cy: BADGE_CY_DEFAULT }
-  }
-}
 
 function autoFit(ctx: SKRSContext2D, text: string, targetSize: number, fontFamily: string, maxW: number): number {
   for (let s = targetSize; s >= 12; s--) {
@@ -114,18 +91,8 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
     .png()
     .toBuffer()
 
-  // ── 3. Overlay do badge CBF — usa arquivo oficial, ignora badge gerado pela IA
-  const badgePos = await detectBadgePosition(fotoResized)
-  const badgePng = fs.readFileSync(path.join(ASSETS, 'cbf_badge_clean.png'))
-  const BADGE_W = 130, BADGE_H = 214
-  const withBadge = await sharp(composited)
-    .composite([{
-      input: badgePng,
-      left: Math.max(0, Math.min(W - BADGE_W, Math.round(badgePos.cx - BADGE_W / 2))),
-      top:  Math.max(0, Math.min(H - BADGE_H, Math.round(badgePos.cy - BADGE_H / 2))),
-    }])
-    .png()
-    .toBuffer()
+  // ── 3. Badge vem direto da camiseta_exemplo.png (face-swap preserva o jersey inteiro)
+  const withBadge = composited
 
   // ── 4. Canvas: pills + texto + watermark ─────────────────────────────────
   const canvas = createCanvas(W, H)

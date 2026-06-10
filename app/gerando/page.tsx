@@ -5,10 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useFigurinhaStore, formatBirthDate } from '@/lib/store'
 
 type Stage =
-  | 'flux_start'
-  | 'flux_poll'
-  | 'vton_start'
-  | 'vton_poll'
+  | 'face_start'
+  | 'face_poll'
   | 'rembg_start'
   | 'rembg_poll'
   | 'finishing'
@@ -16,27 +14,23 @@ type Stage =
   | 'error'
 
 const STAGE_MSG: Record<Stage, string> = {
-  flux_start:   '⚡ Processando a foto do craque...',
-  flux_poll:    '🧍 Ajustando pose e camiseta base...',
-  vton_start:   '🎽 Aplicando camiseta oficial da Seleção...',
-  vton_poll:    '🇧🇷 Transferindo detalhes da camiseta...',
-  rembg_start:  '✂️ Iniciando remoção do fundo...',
-  rembg_poll:   '✂️ Removendo o fundo da foto...',
-  finishing:    '🏆 Aplicando design Panini Copa 2026...',
-  done:         '✅ Figurinha pronta!',
-  error:        '⚠️ Erro',
+  face_start:  '⚡ Processando a foto do craque...',
+  face_poll:   '🎽 Colocando na camiseta da Seleção Brasileira...',
+  rembg_start: '✂️ Iniciando remoção do fundo...',
+  rembg_poll:  '✂️ Removendo o fundo da foto...',
+  finishing:   '🏆 Aplicando design Panini Copa 2026...',
+  done:        '✅ Figurinha pronta!',
+  error:       '⚠️ Erro',
 }
 
 const STAGE_PCT: Record<Stage, number> = {
-  flux_start:   5,
-  flux_poll:    10,
-  vton_start:   40,
-  vton_poll:    45,
-  rembg_start:  72,
-  rembg_poll:   76,
-  finishing:    91,
-  done:         100,
-  error:        0,
+  face_start:  5,
+  face_poll:   10,
+  rembg_start: 65,
+  rembg_poll:  70,
+  finishing:   91,
+  done:        100,
+  error:       0,
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -58,7 +52,7 @@ export default function GerandoPage() {
   const store  = useFigurinhaStore()
   const called = useRef(-1)
 
-  const [stage, setStage]     = useState<Stage>('flux_start')
+  const [stage, setStage]     = useState<Stage>('face_start')
   const [progress, setProgress] = useState(5)
   const [error, setError]     = useState<string | null>(null)
   const [elapsed, setElapsed] = useState(0)
@@ -89,7 +83,7 @@ export default function GerandoPage() {
     called.current = store.generationId
 
     // Reset visual state for new generation
-    setStage('flux_start')
+    setStage('face_start')
     setProgress(5)
     setError(null)
     setElapsed(0)
@@ -113,53 +107,37 @@ export default function GerandoPage() {
         for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i)
         const blob      = new Blob([bytes], { type: mimeType })
 
-        // 1. Inicia FLUX Kontext
-        setStage('flux_start')
+        // 1. Inicia face-swap (rosto do usuário sobre camiseta_exemplo.png)
+        setStage('face_start')
         const fd = new FormData()
         fd.append('photo', blob, 'photo.jpg')
         const startRes = await fetch('/api/gerar/start', { method: 'POST', body: fd })
         if (!startRes.ok) throw new Error((await startRes.json()).error)
-        const { predictionId: fluxId } = await startRes.json()
+        const { predictionId: faceId } = await startRes.json()
 
-        // 2. Polling FLUX — pose + camiseta base
-        setStage('flux_poll')
-        const fluxUrl = await pollUntilDone(fluxId, () => {
-          setProgress((p) => Math.min(p + 0.5, 38))
+        // 2. Polling face-swap
+        setStage('face_poll')
+        const faceUrl = await pollUntilDone(faceId, () => {
+          setProgress((p) => Math.min(p + 0.5, 62))
         })
 
-        // 3. Inicia IDM-VTON — aplica camiseta de referência real
-        setStage('vton_start')
-        const step2Res = await fetch('/api/gerar/step2', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ humanImageUrl: fluxUrl }),
-        })
-        if (!step2Res.ok) throw new Error((await step2Res.json()).error)
-        const { predictionId: vtonId } = await step2Res.json()
-
-        // 4. Polling IDM-VTON
-        setStage('vton_poll')
-        const jerseyUrl = await pollUntilDone(vtonId, () => {
-          setProgress((p) => Math.min(p + 0.5, 70))
-        })
-
-        // 5. Inicia rembg
+        // 3. Inicia rembg
         setStage('rembg_start')
         const rembgRes = await fetch('/api/gerar/rembg', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: jerseyUrl }),
+          body: JSON.stringify({ imageUrl: faceUrl }),
         })
         if (!rembgRes.ok) throw new Error((await rembgRes.json()).error)
         const { predictionId: rembgId } = await rembgRes.json()
 
-        // 6. Polling rembg
+        // 4. Polling rembg
         setStage('rembg_poll')
         const rembgUrl = await pollUntilDone(rembgId, () => {
           setProgress((p) => Math.min(p + 0.5, 88))
         })
 
-        // 7. Compositor
+        // 5. Compositor
         setStage('finishing')
         const finishRes = await fetch('/api/gerar/finish', {
           method: 'POST',

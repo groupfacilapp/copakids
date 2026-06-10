@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as fs from 'fs'
+import * as path from 'path'
 
-const FLUX_VERSION = '897a70f5a7dbd8a0611413b3b98cf417b45f266bd595c571a22947619d9ae462'
-
-const JERSEY_PROMPT = `Change only the clothing of the person to a plain, solid, uniform yellow soccer jersey with a green V-neck collar and green sleeve cuffs. The jersey must be completely plain, solid yellow fabric with absolutely NO logos, NO badges, NO symbols, NO text, and NO graphics on it. Replace all existing clothing and any existing logos or badges on the chest. Keep the person's face, hair, skin tone, expression, and all physical features 100% identical. Studio photography, clean white background, soft professional studio lighting, sharp focus, photorealistic.`
+// lucataco/faceswap — troca só o rosto, preserva corpo + camiseta da referência
+const FACESWAP_VERSION = '25bdae46f2713138640b6e8c04dc4ca18625ce95b1863936b053eee42d9ba6db'
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +14,10 @@ export async function POST(req: NextRequest) {
     const photoBase64 = Buffer.from(await photo.arrayBuffer()).toString('base64')
     const mimeType = photo.type || 'image/jpeg'
 
+    // Target fixo: camiseta_exemplo.png — pose frontal padrão + jersey oficial com Nike, CBF badge e BRASIL
+    const targetPath = path.join(process.cwd(), 'public/assets/camiseta_exemplo.png')
+    const targetBase64 = fs.readFileSync(targetPath).toString('base64')
+
     const res = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
@@ -20,15 +25,15 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: FLUX_VERSION,
+        version: FACESWAP_VERSION,
         input: {
-          input_image:       `data:${mimeType};base64,${photoBase64}`,
-          prompt:            JERSEY_PROMPT,
-          aspect_ratio:      'match_input_image',
-          output_format:     'png',
-          output_quality:    100,
-          safety_tolerance:  3,
-          prompt_upsampling: false,
+          source_img:          `data:${mimeType};base64,${photoBase64}`,
+          target_img:          `data:image/png;base64,${targetBase64}`,
+          face_restore:        true,
+          face_upsample:       true,
+          background_enhance:  false,
+          upscale:             1,
+          codeformer_fidelity: 0.8,
         },
       }),
     })
