@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { retrieveImage } from '@/lib/imageCache'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
 
     // Mock gerado pelo start/route.ts (OpenAI gpt-image-1)
-    // O base64 da imagem fica encodado no ID para não precisar de storage temporário
+    // O base64 fica em cache em memória; o ID é um hash curto de 32 chars
     if (id.startsWith('mock_openai_')) {
-      const b64url = id.replace('mock_openai_', '')
-      const b64 = Buffer.from(b64url, 'base64url').toString('utf8')
-      // Retorna como data URL para o pipeline de rembg consumir
+      const cacheId = id.replace('mock_openai_', '')
+      const b64 = retrieveImage(cacheId)
+      if (!b64) {
+        return NextResponse.json({ error: 'Imagem expirada ou não encontrada no cache' }, { status: 404 })
+      }
       const dataUrl = `data:image/png;base64,${b64}`
       return NextResponse.json({ status: 'succeeded', output: dataUrl, error: null })
     }

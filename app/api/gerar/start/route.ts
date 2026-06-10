@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
-import { toFile } from 'openai'
+import OpenAI, { toFile } from 'openai'
+import { storeImage } from '@/lib/imageCache'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 
 // Prompt focado em colocar a camiseta da Seleção Brasileira de forma limpa
 const JERSEY_PROMPT = [
-  'The person in the photo is wearing the official Brazil national soccer team jersey.',
+  'The person in the photo is now wearing the official Brazil national soccer team jersey.',
   'The jersey is bright yellow with a V-shaped green collar.',
   'The official CBF (Confederação Brasileira de Futebol) badge is on the left chest.',
   'A small Nike logo is on the right chest.',
   'The word BRASIL appears at the bottom of the jersey.',
-  'Four stars are above the CBF badge.',
-  'Keep the face, skin tone, and hair exactly as in the original photo.',
-  'The person should be facing forward with a confident pose, upper body visible.',
-  'Clean, white or neutral studio background.',
-  'Photorealistic, high quality.',
+  'Four yellow stars are above the CBF badge.',
+  'Keep the face, skin tone, hair and expression exactly as in the original photo.',
+  'The person should be facing forward with a natural pose, upper body visible.',
+  'Photorealistic, high quality, studio lighting with a clean white or neutral background.',
 ].join(' ')
 
 export async function POST(req: NextRequest) {
@@ -42,11 +41,13 @@ export async function POST(req: NextRequest) {
     const b64 = response.data?.[0]?.b64_json
     if (!b64) throw new Error('OpenAI não retornou imagem')
 
-    // Encodamos o base64 em base64url para usar como mock ID no poll
-    const mockId = `mock_openai_${Buffer.from(b64).toString('base64url')}`
+    // Armazena em cache e retorna ID curto (evita URL gigante no poll)
+    const cacheId = storeImage(b64)
+    const mockId = `mock_openai_${cacheId}`
     return NextResponse.json({ predictionId: mockId })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erro interno'
+    console.error('[start/route] OpenAI error:', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
