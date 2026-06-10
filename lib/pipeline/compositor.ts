@@ -26,9 +26,9 @@ const P1_Y1 = 1058, P1_Y2 = 1198
 const P2_Y1 = 1215, P2_Y2 = 1308
 const PILL_R = 26
 
-// Posição do badge CBF — centro da foto (800px) = x=400, ~57% do eixo Y da foto
-const BADGE_CX = 400
-const BADGE_CY = 640
+// Fallback — usado se a detecção falhar
+const BADGE_CX_DEFAULT = 400
+const BADGE_CY_DEFAULT = 640
 
 export interface UserData {
   nome: string
@@ -37,6 +37,25 @@ export interface UserData {
   peso: string
   clube: string
   watermark?: boolean
+}
+
+async function detectBadgePosition(fotoResized: Buffer): Promise<{ cx: number; cy: number }> {
+  try {
+    const { info } = await sharp(fotoResized)
+      .trim({ threshold: 10 })
+      .toBuffer({ resolveWithObject: true })
+    const personLeft = -Math.round((info as { trimOffsetLeft?: number }).trimOffsetLeft ?? 0)
+    const personTop  = -Math.round((info as { trimOffsetTop?: number }).trimOffsetTop  ?? 0)
+    const personW    = info.width
+    const personH    = info.height
+    // Badge no centro X da pessoa, ~52% da altura (peito superior)
+    return {
+      cx: personLeft + Math.round(personW / 2),
+      cy: personTop  + Math.round(personH * 0.52),
+    }
+  } catch {
+    return { cx: BADGE_CX_DEFAULT, cy: BADGE_CY_DEFAULT }
+  }
 }
 
 function autoFit(ctx: SKRSContext2D, text: string, targetSize: number, fontFamily: string, maxW: number): number {
@@ -94,14 +113,15 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
     .png()
     .toBuffer()
 
-  // ── 3. Overlay do badge CBF real (PNG com transparência) ─────────────────
+  // ── 3. Overlay do badge CBF — posição detectada dinamicamente ───────────
   const badgePath = path.join(ASSETS, 'cbf_badge_clean.png')
   let withBadge = composited
   if (fs.existsSync(badgePath)) {
+    const { cx: badgeCX, cy: badgeCY } = await detectBadgePosition(fotoResized)
     const badgeMeta = await sharp(badgePath).metadata()
     const bw = badgeMeta.width!, bh = badgeMeta.height!
-    const badgeLeft = Math.round(BADGE_CX - bw / 2)
-    const badgeTop  = Math.round(BADGE_CY - bh / 2)
+    const badgeLeft = Math.round(badgeCX - bw / 2)
+    const badgeTop  = Math.round(badgeCY - bh / 2)
     withBadge = await sharp(composited)
       .composite([{ input: badgePath, left: badgeLeft, top: badgeTop }])
       .png()

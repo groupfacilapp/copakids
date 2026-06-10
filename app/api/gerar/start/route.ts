@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const FLUX_VERSION = '897a70f5a7dbd8a0611413b3b98cf417b45f266bd595c571a22947619d9ae462'
 
-const JERSEY_PROMPT = `Full upper body portrait, front-facing pose, person looking directly at the camera, wearing a plain yellow Brazil national team jersey with green V-neck collar, arms relaxed and straight at the sides (arms must NOT be crossed, folded, or raised — they hang naturally straight down).
+const JERSEY_PROMPT = `Full upper body portrait, front-facing pose, person looking directly at the camera, wearing a plain solid yellow jersey with green V-neck collar and green sleeve cuffs, NO logos, NO badges, NO text on the jersey — just plain yellow fabric. Arms relaxed and straight at the sides (NOT crossed, NOT folded).
 
-IMPORTANT — preserve ONLY the face and head: facial features, skin tone, beard, hair style, hair color, eye shape, eye color, expression, face structure. Do not alter the face in any way.
-
-Change ONLY the clothing to the yellow Brazil jersey with green collar. Adjust the pose so arms hang straight at the sides.
+FACE — CRITICAL: preserve the face 100% identical to the input photo. Do NOT add beard, stubble, mustache, wrinkles, or ANY facial hair that does not exist in the original photo. If the person is a child, keep the child face exactly as-is. Do not age the person. Do not alter skin, hair, eyes, or expression.
 
 Studio photography, clean white background, soft professional studio lighting, sharp focus, photorealistic, ultra high resolution, 4K.`
 
