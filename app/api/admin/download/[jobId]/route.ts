@@ -2,6 +2,46 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getJob, markPaid } from '@/lib/redis'
 import { compositeSticker } from '@/lib/pipeline/compositor'
 
+export const maxDuration = 60
+
+async function upscale4K(pngBuffer: Buffer): Promise<Buffer> {
+  const base64 = pngBuffer.toString('base64')
+
+  const res = await fetch('https://api.replicate.com/v1/models/nightmareai/real-esrgan/predictions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.REPLICATE_API_KEY!}`,
+      'Content-Type': 'application/json',
+      Prefer: 'wait=55',
+    },
+    body: JSON.stringify({
+      input: {
+        image: `data:image/png;base64,${base64}`,
+        scale: 4,
+        face_enhance: true,
+      },
+    }),
+  })
+
+  if (!res.ok) throw new Error(`Upscale ${res.status}: ${await res.text()}`)
+  let pred = await res.json()
+
+  // Polling caso o Prefer: wait não conclua a tempo
+  for (let i = 0; i < 20 && pred.status !== 'succeeded' && pred.status !== 'failed'; i++) {
+    await new Promise((r) => setTimeout(r, 2000))
+    const p = await fetch(`https://api.replicate.com/v1/predictions/${pred.id}`, {
+      headers: { Authorization: `Bearer ${process.env.REPLICATE_API_KEY!}` },
+    })
+    pred = await p.json()
+  }
+
+  if (pred.status !== 'succeeded' || !pred.output) throw new Error('Upscale falhou ou expirou')
+
+  const imgRes = await fetch(pred.output)
+  if (!imgRes.ok) throw new Error('Falha ao baixar imagem upscalada')
+  return Buffer.from(await imgRes.arrayBuffer())
+}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ jobId: string }> }) {
   try {
     const secret = req.headers.get('x-admin-secret')
@@ -23,22 +63,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ jobI
     }
     const personPng = Buffer.from(await imgRes.arrayBuffer())
 
-    // Gera sem marca d'água
+    // Gera composite sem marca d'água
     const stickerPng = await compositeSticker(personPng, {
-      nome:   job.nome,
-      data:   job.data,
-      altura: job.altura,
-      peso:   job.peso,
-      clube:  job.clube,
+      nome:      job.nome,
+      data:      job.data,
+      altura:    job.altura,
+      peso:      job.peso,
+      clube:     job.clube,
       watermark: false,
     })
+
+    // Upscale 4x para resolução 4K (~4064×5400px)
+    const stickerHD = await upscale4K(stickerPng)
 
     // Marca como pago
     await markPaid(jobId)
 
-    const filename = `figurinha_${job.nome.replace(/\s+/g, '_').toLowerCase()}.png`
+    const filename = `figurinha_4K_${job.nome.replace(/\s+/g, '_').toLowerCase()}.png`
 
-    return new NextResponse(new Uint8Array(stickerPng), {
+    return new NextResponse(new Uint8Array(stickerHD), {
       status: 200,
       headers: {
         'Content-Type': 'image/png',
