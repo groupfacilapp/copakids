@@ -113,20 +113,9 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
     .png()
     .toBuffer()
 
-  // ── 3. Overlay do badge CBF — posição detectada dinamicamente ───────────
-  const badgePath = path.join(ASSETS, 'cbf_badge_clean.png')
-  let withBadge = composited
-  if (fs.existsSync(badgePath)) {
-    const { cx: badgeCX, cy: badgeCY } = await detectBadgePosition(fotoResized)
-    const badgeMeta = await sharp(badgePath).metadata()
-    const bw = badgeMeta.width!, bh = badgeMeta.height!
-    const badgeLeft = Math.round(badgeCX - bw / 2)
-    const badgeTop  = Math.round(badgeCY - bh / 2)
-    withBadge = await sharp(composited)
-      .composite([{ input: badgePath, left: badgeLeft, top: badgeTop }])
-      .png()
-      .toBuffer()
-  }
+  // ── 3. Overlay do badge CBF (apenas quando não usar IDM-VTON try-on)
+  // IDM-VTON já transfere o badge real da camiseta de referência
+  const withBadge = composited
 
   // ── 4. Canvas: pills + texto + watermark ─────────────────────────────────
   const canvas = createCanvas(W, H)

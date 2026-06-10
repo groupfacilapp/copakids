@@ -8,7 +8,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     })
     if (!res.ok) throw new Error(`Replicate ${res.status}`)
     const p = await res.json()
-    return NextResponse.json({ status: p.status, output: p.output ?? null, error: p.error ?? null })
+    // Normaliza output: IDM-VTON retorna array, FLUX retorna string
+    const raw = p.output ?? null
+    const output = Array.isArray(raw) ? (raw[0] ?? null) : raw
+    return NextResponse.json({ status: p.status, output, error: p.error ?? null })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erro interno'
     return NextResponse.json({ error: msg }, { status: 500 })
