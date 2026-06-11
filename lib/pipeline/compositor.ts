@@ -16,10 +16,19 @@ function registerFonts() {
   }
 }
 
-// Layout
+// Layout do card
 const W = 1016, H = 1350
-const FOTO_X2 = 800, FOTO_Y2 = 1115
-const FADE_START = Math.round(FOTO_Y2 * 0.78)
+
+// Foto da pessoa: reduzida e centralizada para proporcionar tamanho correto no card
+const FOTO_W    = 650
+const FOTO_H    = 950
+const FOTO_LEFT = Math.round((W - FOTO_W) / 2)   // 183 — centralizado horizontalmente
+const FADE_START = Math.round(FOTO_H * 0.78)       // início do fade para o nome
+
+// Badge CBF sobreposto programaticamente — sempre correto independente da IA
+const BADGE_SIZE = 190
+const BADGE_LEFT = Math.round(W / 2 - BADGE_SIZE / 2)  // centralizado no card
+const BADGE_TOP  = Math.round(FOTO_H * 0.54)             // ~54% da foto = região do peito
 
 const PILL_X1  = 60,  PILL1_X2 = 760, PILL2_X2 = 703
 const P1_Y1 = 1058, P1_Y2 = 1198
@@ -34,7 +43,6 @@ export interface UserData {
   clube: string
   watermark?: boolean
 }
-
 
 function autoFit(ctx: SKRSContext2D, text: string, targetSize: number, fontFamily: string, maxW: number): number {
   for (let s = targetSize; s >= 12; s--) {
@@ -51,33 +59,33 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
   const meta = await sharp(personPng).metadata()
   const pw = meta.width!, ph = meta.height!
 
-  const rSrc = pw / ph, rDst = FOTO_X2 / FOTO_Y2
+  const rSrc = pw / ph, rDst = FOTO_W / FOTO_H
   let newW: number, newH: number
-  if (rSrc > rDst) { newH = FOTO_Y2; newW = Math.round(newH * rSrc) }
-  else              { newW = FOTO_X2; newH = Math.round(newW / rSrc) }
+  if (rSrc > rDst) { newH = FOTO_H; newW = Math.round(newH * rSrc) }
+  else              { newW = FOTO_W; newH = Math.round(newW / rSrc) }
 
-  const cx = Math.round((newW - FOTO_X2) / 2)
+  const cx = Math.round((newW - FOTO_W) / 2)
 
   const fotoResized = await sharp(personPng)
     .resize(newW, newH)
-    .extract({ left: cx, top: 0, width: FOTO_X2, height: FOTO_Y2 })
+    .extract({ left: cx, top: 0, width: FOTO_W, height: FOTO_H })
     .png()
     .toBuffer()
 
   const fadeMap: number[] = []
-  for (let y = 0; y < FOTO_Y2; y++) {
-    for (let x = 0; x < FOTO_X2; x++) {
+  for (let y = 0; y < FOTO_H; y++) {
+    for (let x = 0; x < FOTO_W; x++) {
       if (y < FADE_START) {
         fadeMap.push(255, 255, 255, 255)
       } else {
-        const t = (y - FADE_START) / (FOTO_Y2 - FADE_START)
+        const t = (y - FADE_START) / (FOTO_H - FADE_START)
         const alpha = Math.round(255 * (1 - t * 0.97))
         fadeMap.push(255, 255, 255, alpha)
       }
     }
   }
   const fadeMask = await sharp(Buffer.from(fadeMap), {
-    raw: { width: FOTO_X2, height: FOTO_Y2, channels: 4 },
+    raw: { width: FOTO_W, height: FOTO_H, channels: 4 },
   }).png().toBuffer()
 
   const fotoFaded = await sharp(fotoResized)
@@ -85,14 +93,22 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
     .png()
     .toBuffer()
 
-  // ── 2. Compositar foto sobre o template ──────────────────────────────────
+  // ── 2. Compositar foto centralizada sobre o template ─────────────────────
   const composited = await sharp(path.join(ASSETS, 'template.png'))
-    .composite([{ input: fotoFaded, top: 0, left: 0 }])
+    .composite([{ input: fotoFaded, top: 0, left: FOTO_LEFT }])
     .png()
     .toBuffer()
 
-  // ── 3. Badge vem direto da camiseta_exemplo.png (face-swap preserva o jersey inteiro)
-  const withBadge = composited
+  // ── 3. Sobrepor badge CBF correto (independente do que a IA gerou) ────────
+  const cbfBadge = await sharp(path.join(ASSETS, 'cbf_badge_clean.png'))
+    .resize(BADGE_SIZE)
+    .png()
+    .toBuffer()
+
+  const withBadge = await sharp(composited)
+    .composite([{ input: cbfBadge, left: BADGE_LEFT, top: BADGE_TOP }])
+    .png()
+    .toBuffer()
 
   // ── 4. Canvas: pills + texto + watermark ─────────────────────────────────
   const canvas = createCanvas(W, H)

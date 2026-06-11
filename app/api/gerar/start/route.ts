@@ -12,55 +12,36 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 // O card/figurinha é montado depois pelo compositeSticker
 const SWAP_PROMPT = `
 You have 2 images:
-- IMAGE 1: A photo of a person. Extract ONLY their identity: face, skin tone, hair, age, expression.
-- IMAGE 2: A portrait photo of Neymar wearing the Brazil national team jersey. Copy ONLY: pose, body framing, jersey design, lighting, background color.
+- IMAGE 1: A photo of a person. Use ONLY for identity.
+- IMAGE 2: Neymar in Brazil national team jersey. Use ONLY for pose, framing, jersey and background.
 
-TASK: Generate a photorealistic portrait of the person from IMAGE 1, placed in the exact same pose, framing and jersey as IMAGE 2.
+TASK: Recreate IMAGE 2 but replace Neymar with the person from IMAGE 1. Everything else stays identical.
 
-─── FRAMING (match IMAGE 2 exactly) ───
-- Show the FULL upper body: from the waist/stomach up to the top of the head
-- The head must occupy roughly the TOP 30% of the image height — NOT more
-- The jersey (with badge and swoosh) must be clearly visible in the LOWER 50% of the image
-- Leave a small margin of background above the head (at least 5% of image height)
-- Do NOT zoom in on the face — pull back the camera to match IMAGE 2 framing
-- Shoulders fully visible, arms visible along the sides
-- Same zoom level and body coverage as IMAGE 2 — if in doubt, zoom out more
+─── IDENTITY — ABSOLUTE PRIORITY ───
+The person from IMAGE 1 must be 100% recognizable in the output.
+DO NOT change ANYTHING about their face:
+- facial structure, proportions, eyes, nose, mouth, ears
+- skin tone, hair color, hairstyle, age, expression
+If the face looks different from IMAGE 1 in ANY way, the output is WRONG.
 
-─── IDENTITY (from IMAGE 1 only) ───
-- Keep face 100% identical: structure, eyes, nose, mouth, skin tone, hair, age
-- Do NOT alter the person's appearance in any way
+─── FRAMING — match IMAGE 2 exactly ───
+- Same zoom level as IMAGE 2: full upper body visible from chest to top of head
+- Head takes up approximately the TOP THIRD of the image
+- Jersey and chest are clearly visible in the lower two thirds
+- Do NOT zoom in — if in doubt, zoom out to match IMAGE 2
 
-─── JERSEY (replicate IMAGE 2 exactly) ───
-The jersey has TWO separate elements at different positions — do NOT confuse them:
-
-ELEMENT A — Nike swoosh:
-- Small dark green checkmark
-- Positioned on the UPPER chest, on the person's RIGHT pectoral (which is the viewer's LEFT side)
-- It is small and sits alone in the upper-left zone
-
-ELEMENT B — CBF badge:
-- Large circular/shield badge with CBF logo
-- Imagine a vertical line dividing the chest exactly in half left-to-right
-- The CENTER of the CBF badge must sit exactly ON that vertical center line
-- It is lower on the chest than the Nike swoosh
-- Stars arc ABOVE the badge, "BRASIL" text BELOW the badge
-- WRONG positions: left side, right side, or anywhere off-center
-- CORRECT position: perfectly centered horizontally on the chest, dead center
-- Look at IMAGE 2 — the badge is centered, not on either side
-
-JERSEY DETAILS:
-- Canary yellow body
-- Dark green V-neck collar
-- Dark green sleeve cuffs
+─── JERSEY — match IMAGE 2 exactly ───
+- Canary yellow body, dark green V-neck collar, dark green sleeve cuffs
+- Nike swoosh on upper-left chest area
+- CBF badge on the chest (position same as IMAGE 2)
 - Same fabric texture as IMAGE 2
 
 ─── BACKGROUND ───
-- Solid dark gray/charcoal background (same as IMAGE 2)
-- Clean, no gradients, no text, no graphics
+- Same dark gray background as IMAGE 2
+- No text, no graphics, no card frame, no watermark
 
 ─── OUTPUT ───
 - Photorealistic, sharp, professional sports portrait
-- NO card frame, NO sticker design, NO text overlay, NO watermark
 `.trim()
 
 export async function POST(req: NextRequest) {
