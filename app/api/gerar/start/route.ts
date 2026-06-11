@@ -75,7 +75,8 @@ export async function POST(req: NextRequest) {
       image: [personFile, jerseyFile],
       prompt: SWAP_PROMPT,
       n: 1,
-      size: '1024x1024',
+      size: '1024x1536', // portrait — melhor para card vertical da figurinha
+      quality: 'high',   // máxima qualidade, preserva rosto e detalhes da camiseta
     })
 
     const b64 = response.data?.[0]?.b64_json
