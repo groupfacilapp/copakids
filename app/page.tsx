@@ -422,7 +422,7 @@ export default function LandingPage() {
             <strong style={{ color: '#009B3A' }}>R$ 1.000</strong> no dia 11/06!
           </p>
           <button className="btn-primary" onClick={() => router.push('/criar')} style={{ fontSize: 20 }}>
-            INICIAR AGORA — É SÓ R$ 12,90 ⚽
+            INICIAR AGORA — É SÓ R$ 19,90 ⚽
           </button>
           <div className="flex items-center justify-center flex-wrap gap-4 mt-5">
             {['✅ Arquivo digital', '📲 Acesso imediato', '🏆 Estilo Panini oficial'].map((item) => (

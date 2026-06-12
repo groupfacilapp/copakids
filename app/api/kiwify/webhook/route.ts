@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
     email:           buyerEmail,
     name:            order.nome ?? buyerName ?? null,
     phone:           buyerPhone || null,
-    value:           12.90,
+    value:           19.90,
     currency:        'BRL',
     clientIp:        req.headers.get('x-forwarded-for'),
     clientUserAgent: req.headers.get('user-agent'),

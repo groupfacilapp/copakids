@@ -300,7 +300,7 @@ export default function AdminPage() {
 
               {/* Cost chip */}
               <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>
-                {order.paid ? <span style={{ color: '#4ade80' }}>+{brl(12.90)}</span> : <span style={{ color: '#fb923c' }}>−{brl(0.25)}</span>}
+                {order.paid ? <span style={{ color: '#4ade80' }}>+{brl(19.90)}</span> : <span style={{ color: '#fb923c' }}>−{brl(0.25)}</span>}
               </div>
 
               {/* Download button (admin 4K) */}

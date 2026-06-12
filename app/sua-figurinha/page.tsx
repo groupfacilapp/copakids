@@ -85,7 +85,7 @@ export default function SuaFigurinhaPage() {
     setTimeout(() => setShowConfetti(false), 4000)
 
     // Pixel: usuário chegou à página da figurinha = ViewContent
-    pixelEvent('ViewContent', { content_name: 'Figurinha Copa 2026', value: 12.90, currency: 'BRL' })
+    pixelEvent('ViewContent', { content_name: 'Figurinha Copa 2026', value: 19.90, currency: 'BRL' })
   }, [store.name, router])
 
   const SHARE_LINK = 'https://www.convocakids.com/?utm_source=whatsapp&utm_medium=referral&utm_campaign=indicacao'
@@ -107,7 +107,7 @@ export default function SuaFigurinhaPage() {
   }, [])
 
   const handleCheckout = useCallback(() => {
-    pixelEvent('InitiateCheckout', { value: 12.90, currency: 'BRL', num_items: 1 })
+    pixelEvent('InitiateCheckout', { value: 19.90, currency: 'BRL', num_items: 1 })
     window.location.href = appendUTMToUrl(CHECKOUT_BASE, readUTM())
   }, [])
 
@@ -253,7 +253,7 @@ export default function SuaFigurinhaPage() {
                     textDecoration: 'line-through',
                   }}
                 >
-                  De R$ 29,90
+                  De R$ 39,90
                 </div>
 
                 {/* Real price */}
@@ -267,7 +267,7 @@ export default function SuaFigurinhaPage() {
                     marginBottom: 2,
                   }}
                 >
-                  R$ 12,90
+                  R$ 19,90
                 </div>
 
                 <div
@@ -418,7 +418,7 @@ export default function SuaFigurinhaPage() {
                 onClick={handleCheckout}
                 style={{ fontSize: 19 }}
               >
-                QUERO MINHA FIGURINHA — R$ 12,90 ⚽
+                QUERO MINHA FIGURINHA — R$ 19,90 ⚽
               </button>
 
               <p

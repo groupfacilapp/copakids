@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 
 // Custos estimados por geração (OpenAI gpt-image-2 + Replicate rembg em BRL)
 const COST_PER_GEN_BRL  = 0.25
-const PRICE_PER_SALE_BRL = 12.90
+const PRICE_PER_SALE_BRL = 19.90
 
 export async function GET(req: NextRequest) {
   const secret = req.headers.get('x-admin-secret')
