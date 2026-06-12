@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
 import { sendDownloadEmail } from '@/lib/email'
 import { saveLastWebhook } from '@/lib/webhookLog'
+import { sendServerPurchase } from '@/lib/metaConversions'
 
 interface KiwifyOrderBump {
   product_id?: string
@@ -166,6 +167,18 @@ export async function POST(req: NextRequest) {
   } catch (emailErr) {
     console.error('[kiwify/webhook] email error:', emailErr)
   }
+
+  // Meta Conversions API — Purchase server-side (não afeta fluxo principal)
+  void sendServerPurchase({
+    orderId:         orderId || order.id,
+    email:           buyerEmail,
+    name:            order.nome ?? buyerName ?? null,
+    phone:           buyerPhone || null,
+    value:           12.90,
+    currency:        'BRL',
+    clientIp:        req.headers.get('x-forwarded-for'),
+    clientUserAgent: req.headers.get('user-agent'),
+  })
 
   return NextResponse.json({ received: true, order_id: order.id })
 }
