@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { compositeSticker } from '@/lib/pipeline/compositor'
 import { saveJob } from '@/lib/redis'
-import { supabaseAdmin } from '@/lib/supabase'
+import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
 
 async function ensureBuckets() {
+  const sb = getSupabaseAdmin()
   const buckets = ['persons', 'stickers']
   for (const name of buckets) {
-    const { error } = await supabaseAdmin.storage.createBucket(name, {
+    const { error } = await sb.storage.createBucket(name, {
       public: false,
       fileSizeLimit: 10_000_000,
     })
-    // Ignora erro "already exists"
     if (error && !error.message.includes('already exists')) {
       console.warn('[finish] bucket create warn:', error.message)
     }
@@ -30,30 +30,28 @@ export async function POST(req: NextRequest) {
       nome, data, altura, peso, clube, watermark: true,
     })
 
-    // Salva no Redis (legacy admin panel)
     const jobId = await saveJob({
       nome, email: email ?? '', clube, data, altura, peso, rembgUrl, paid: false,
     })
 
-    // Salva no Supabase
     try {
+      const sb = getSupabaseAdmin()
       await ensureBuckets()
 
       const storagePath = `persons/${jobId}.png`
-      await supabaseAdmin.storage
+      await sb.storage
         .from('persons')
         .upload(storagePath, personPng, { contentType: 'image/png', upsert: true })
 
-      await supabaseAdmin.from('orders').insert({
+      await sb.from('orders').insert({
         job_id: jobId,
         email: email ?? null,
         nome: nome ?? null,
         dados_figurinha: { data, altura, peso, clube },
         storage_path: storagePath,
         paid: false,
-      })
+      } as Partial<OrderRow>)
     } catch (dbErr) {
-      // Não bloqueia a resposta — log apenas
       console.error('[finish] supabase error:', dbErr)
     }
 

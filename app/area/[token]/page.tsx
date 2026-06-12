@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase'
+import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 
 interface Props {
@@ -10,11 +10,13 @@ export default async function AreaPage({ params }: Props) {
 
   if (!token || token.length < 32) return notFound()
 
-  const { data: order } = await supabaseAdmin
+  const { data: rawOrder } = await getSupabaseAdmin()
     .from('orders')
     .select('paid, nome, dados_figurinha, created_at')
     .eq('download_token', token)
     .single()
+
+  const order = rawOrder as Pick<OrderRow, 'paid' | 'nome' | 'dados_figurinha' | 'created_at'> | null
 
   if (!order) return notFound()
 
@@ -45,7 +47,6 @@ export default async function AreaPage({ params }: Props) {
           overflow: 'hidden',
         }}
       >
-        {/* Header verde */}
         <div
           style={{
             background: 'linear-gradient(135deg, #009B3A, #007030)',

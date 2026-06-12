@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
 import { compositeSticker } from '@/lib/pipeline/compositor'
 
 export async function GET(
@@ -12,12 +12,15 @@ export async function GET(
     return NextResponse.json({ error: 'Token inválido' }, { status: 400 })
   }
 
-  // Busca e valida o pedido — 100% server-side
-  const { data: order, error } = await supabaseAdmin
+  const sb = getSupabaseAdmin()
+
+  const { data, error } = await sb
     .from('orders')
     .select('id, paid, nome, dados_figurinha, storage_path, sticker_path')
     .eq('download_token', token)
     .single()
+
+  const order = data as Pick<OrderRow, 'id' | 'paid' | 'nome' | 'dados_figurinha' | 'storage_path' | 'sticker_path'> | null
 
   if (error || !order) {
     return NextResponse.json({ error: 'Token não encontrado' }, { status: 404 })
@@ -27,19 +30,21 @@ export async function GET(
     return NextResponse.json({ error: 'Pagamento pendente' }, { status: 402 })
   }
 
-  // Se já existe sticker gerado, serve direto do Storage
   if (order.sticker_path) {
-    const { data: signed } = await supabaseAdmin.storage
+    const { data: signed } = await sb.storage
       .from('stickers')
-      .createSignedUrl(order.sticker_path, 300) // 5 min
+      .createSignedUrl(order.sticker_path, 300)
 
     if (signed?.signedUrl) {
       return NextResponse.redirect(signed.signedUrl)
     }
   }
 
-  // Gera o sticker final (sem marca d'água) a partir da imagem salva
-  const { data: personBlob, error: storageErr } = await supabaseAdmin.storage
+  if (!order.storage_path) {
+    return NextResponse.json({ error: 'Imagem não encontrada' }, { status: 500 })
+  }
+
+  const { data: personBlob, error: storageErr } = await sb.storage
     .from('persons')
     .download(order.storage_path)
 
@@ -51,22 +56,23 @@ export async function GET(
   const d = (order.dados_figurinha ?? {}) as Record<string, string>
 
   const stickerPng = await compositeSticker(personPng, {
-    nome:  order.nome ?? '',
-    data:  d.data    ?? '',
-    altura: d.altura ?? '',
-    peso:  d.peso    ?? '',
-    clube: d.clube   ?? '',
+    nome:   order.nome   ?? '',
+    data:   d.data       ?? '',
+    altura: d.altura     ?? '',
+    peso:   d.peso       ?? '',
+    clube:  d.clube      ?? '',
     watermark: false,
   })
 
-  // Cache o sticker gerado no Storage para próximas visitas
   try {
     const stickerPath = `stickers/${token}.png`
-    await supabaseAdmin.storage
+    await sb.storage
       .from('stickers')
       .upload(stickerPath, stickerPng, { contentType: 'image/png', upsert: true })
-
-    await supabaseAdmin.from('orders').update({ sticker_path: stickerPath }).eq('id', order.id)
+    await sb
+      .from('orders')
+      .update({ sticker_path: stickerPath } as Partial<OrderRow>)
+      .eq('download_token', token)
   } catch (cacheErr) {
     console.warn('[download] cache error:', cacheErr)
   }
