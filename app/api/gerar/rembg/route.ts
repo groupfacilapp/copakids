@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit } from '@/lib/rateLimit'
 
 const REMBG_VERSION = 'fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003'
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+    const allowed = await rateLimit(`rembg:${ip}`, 10, 3600)
+    if (!allowed) {
+      return NextResponse.json({ error: 'Muitas tentativas. Tente novamente em 1 hora.' }, { status: 429 })
+    }
+
     const { imageUrl } = await req.json()
     if (!imageUrl) return NextResponse.json({ error: 'imageUrl obrigatório' }, { status: 400 })
 

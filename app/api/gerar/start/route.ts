@@ -28,8 +28,23 @@ export async function POST(req: NextRequest) {
     const photo = formData.get('photo') as File | null
     if (!photo) return NextResponse.json({ error: 'Foto obrigatória' }, { status: 400 })
 
+    const MAX_SIZE = 10 * 1024 * 1024 // 10 MB
+    if (photo.size > MAX_SIZE) {
+      return NextResponse.json({ error: 'Foto muito grande (máx 10 MB)' }, { status: 413 })
+    }
+
     const photoBuffer = Buffer.from(await photo.arrayBuffer())
-    const mimeType    = (photo.type || 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/webp'
+
+    // Valida magic bytes — rejeita arquivos que não são imagem real
+    const magic = photoBuffer.subarray(0, 4)
+    const isJpeg = magic[0] === 0xFF && magic[1] === 0xD8
+    const isPng  = magic[0] === 0x89 && magic[1] === 0x50 && magic[2] === 0x4E && magic[3] === 0x47
+    const isWebp = magic[0] === 0x52 && magic[1] === 0x49 && magic[2] === 0x46 && magic[3] === 0x46
+    if (!isJpeg && !isPng && !isWebp) {
+      return NextResponse.json({ error: 'Formato de imagem inválido. Use JPEG, PNG ou WebP.' }, { status: 415 })
+    }
+
+    const mimeType = isJpeg ? 'image/jpeg' : isPng ? 'image/png' : 'image/webp'
 
     // Base: Neymar com a camiseta
     const jerseyPath = path.join(process.cwd(), 'public', 'assets', 'jersey_reference.png')
