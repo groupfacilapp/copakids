@@ -10,13 +10,19 @@ export default async function AreaPage({ params }: Props) {
 
   if (!token || token.length < 32) return notFound()
 
-  const { data: rawOrder } = await getSupabaseAdmin()
-    .from('orders')
-    .select('paid, nome, dados_figurinha, created_at')
-    .eq('download_token', token)
-    .single()
+  let order: Pick<OrderRow, 'paid' | 'nome' | 'dados_figurinha' | 'created_at'> | null = null
 
-  const order = rawOrder as Pick<OrderRow, 'paid' | 'nome' | 'dados_figurinha' | 'created_at'> | null
+  try {
+    const { data } = await getSupabaseAdmin()
+      .from('orders')
+      .select('paid, nome, dados_figurinha, created_at')
+      .eq('download_token', token)
+      .single()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    order = data as any
+  } catch {
+    // env vars ausentes ou erro de conexão
+  }
 
   if (!order) return notFound()
 
