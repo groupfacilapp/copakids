@@ -1,11 +1,19 @@
 import sharp from 'sharp'
-import { createCanvas, GlobalFonts, SKRSContext2D } from '@napi-rs/canvas'
 import * as path from 'path'
 import * as fs from 'fs'
 
+// Dynamic import so a native-module load failure is caught inside the async function
+// (static import would crash the Lambda before any try-catch can act)
+type CanvasModule = typeof import('@napi-rs/canvas')
+let _canvas: CanvasModule | null = null
+async function getCanvas(): Promise<CanvasModule> {
+  if (!_canvas) _canvas = await import('@napi-rs/canvas')
+  return _canvas
+}
+
 const ASSETS = path.join(process.cwd(), 'public/assets')
 
-function registerFonts() {
+function registerFonts(GlobalFonts: CanvasModule['GlobalFonts']) {
   const bold    = path.join(ASSETS, 'Barlow-Bold.ttf')
   const semi    = path.join(ASSETS, 'Barlow-SemiBold.ttf')
   const regular = path.join(ASSETS, 'Barlow-Regular.ttf')
@@ -39,7 +47,7 @@ export interface UserData {
   watermark?: boolean
 }
 
-function autoFit(ctx: SKRSContext2D, text: string, targetSize: number, fontFamily: string, maxW: number): number {
+function autoFit(ctx: { font: string; measureText(t: string): { width: number } }, text: string, targetSize: number, fontFamily: string, maxW: number): number {
   for (let s = targetSize; s >= 12; s--) {
     ctx.font = `${s}px "${fontFamily}"`
     if (ctx.measureText(text).width <= maxW) return s
@@ -48,7 +56,8 @@ function autoFit(ctx: SKRSContext2D, text: string, targetSize: number, fontFamil
 }
 
 export async function compositeSticker(personPng: Buffer, data: UserData): Promise<Buffer> {
-  registerFonts()
+  const { createCanvas, GlobalFonts } = await getCanvas()
+  registerFonts(GlobalFonts)
 
   // ── 1. Redimensionar e fadear foto ────────────────────────────────────────
   const meta = await sharp(personPng).metadata()

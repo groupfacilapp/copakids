@@ -36,11 +36,23 @@ const STAGE_PCT: Record<Stage, number> = {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+async function safeJson(res: Response): Promise<Record<string, unknown>> {
+  try { return await res.json() } catch { return { _raw: await res.text().catch(() => `HTTP ${res.status}`) } }
+}
+
+function apiError(res: Response, parsed: Record<string, unknown>): Error {
+  const msg = typeof parsed.error === 'string' ? parsed.error
+    : typeof parsed._raw === 'string' ? parsed._raw
+    : `Erro HTTP ${res.status}`
+  return new Error(msg)
+}
+
 async function pollUntilDone(id: string, onProgress?: () => void): Promise<string> {
   for (let i = 0; i < 60; i++) {
     await sleep(3000)
     const res = await fetch(`/api/gerar/poll/${id}`)
-    const data = await res.json()
+    const data = await safeJson(res)
+    if (!res.ok) throw apiError(res, data)
     if (data.status === 'failed') throw new Error(`Predição falhou: ${data.error}`)
     if (data.status === 'succeeded' && data.output) return data.output as string
     onProgress?.()
@@ -113,8 +125,9 @@ export default function GerandoPage() {
         const fd = new FormData()
         fd.append('photo', blob, 'photo.jpg')
         const startRes = await fetch('/api/gerar/start', { method: 'POST', body: fd })
-        if (!startRes.ok) throw new Error((await startRes.json()).error)
-        const { predictionId: faceId } = await startRes.json()
+        const startData = await safeJson(startRes)
+        if (!startRes.ok) throw apiError(startRes, startData)
+        const faceId = startData.predictionId as string
 
         // 2. Polling face-swap
         setStage('face_poll')
@@ -129,8 +142,9 @@ export default function GerandoPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageUrl: faceUrl }),
         })
-        if (!rembgRes.ok) throw new Error((await rembgRes.json()).error)
-        const { predictionId: rembgId } = await rembgRes.json()
+        const rembgData = await safeJson(rembgRes)
+        if (!rembgRes.ok) throw apiError(rembgRes, rembgData)
+        const rembgId = rembgData.predictionId as string
 
         // 4. Polling rembg
         setStage('rembg_poll')
@@ -154,7 +168,7 @@ export default function GerandoPage() {
             utm_params: readUTM(),
           }),
         })
-        if (!finishRes.ok) throw new Error((await finishRes.json()).error)
+        if (!finishRes.ok) throw apiError(finishRes, await safeJson(finishRes))
 
         const jobId   = finishRes.headers.get('X-Job-Id') ?? ''
         const imgBlob = await finishRes.blob()
