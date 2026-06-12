@@ -26,7 +26,9 @@ export default function AreaPage() {
 
   const [data, setData]         = useState<AreaData | null>(null)
   const [status, setStatus]     = useState<'loading' | 'error' | 'pending' | 'ok'>('loading')
-  const [sharing, setSharing]   = useState<string | null>(null) // token being shared
+  const [sharing, setSharing]   = useState<string | null>(null)
+  const [downloading, setDownloading] = useState<string | null>(null)
+  const [dlError, setDlError]   = useState<string | null>(null)
 
   useEffect(() => {
     if (!token) return
@@ -40,6 +42,32 @@ export default function AreaPage() {
       })
       .catch(() => setStatus('error'))
   }, [token])
+
+  const handleDownload = useCallback(async (url: string, filename: string, dlKey: string) => {
+    setDownloading(dlKey)
+    setDlError(null)
+    try {
+      const res = await fetch(url)
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        setDlError(json.error ?? 'Erro ao baixar arquivo. Tente novamente.')
+        return
+      }
+      const blob = await res.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(objectUrl)
+    } catch {
+      setDlError('Erro de conexão. Tente novamente.')
+    } finally {
+      setDownloading(null)
+    }
+  }, [])
 
   const handleShare = useCallback(async (order: OrderCard) => {
     setSharing(order.download_token)
@@ -113,6 +141,14 @@ export default function AreaPage() {
         </p>
       </div>
 
+      {/* ── Erro de download ── */}
+      {dlError && (
+        <div style={{ margin: '0 16px 16px', background: 'rgba(255,80,80,0.15)', border: '1px solid rgba(255,80,80,0.3)', borderRadius: 12, padding: '12px 16px', color: '#ff8080', fontSize: 13 }}>
+          ⚠️ {dlError}
+          <button onClick={() => setDlError(null)} style={{ float: 'right', background: 'none', border: 'none', color: '#ff8080', cursor: 'pointer', fontSize: 16 }}>✕</button>
+        </div>
+      )}
+
       {/* ── Figurinhas ── */}
       <div style={{ padding: '0 16px', marginBottom: 24 }}>
         {multipleOrders ? (
@@ -123,7 +159,10 @@ export default function AreaPage() {
                 key={o.id}
                 order={o}
                 onShare={() => handleShare(o)}
+                onDownloadPng={() => handleDownload(`/api/download/${o.download_token}`, `${o.nome ?? 'figurinha'}_Copa2026.png`, `png-${o.download_token}`)}
+                onDownloadPdf={() => handleDownload(`/api/download/pdf/${o.download_token}`, `${o.nome ?? 'figurinha'}_Copa2026.pdf`, `pdf-${o.download_token}`)}
                 sharing={sharing === o.download_token}
+                downloading={downloading}
                 compact
               />
             ))}
@@ -134,7 +173,10 @@ export default function AreaPage() {
             <StickerCard
               order={data.orders[0]}
               onShare={() => handleShare(data.orders[0])}
+              onDownloadPng={() => handleDownload(`/api/download/${data.orders[0].download_token}`, `${data.orders[0].nome ?? 'figurinha'}_Copa2026.png`, `png-${data.orders[0].download_token}`)}
+              onDownloadPdf={() => handleDownload(`/api/download/pdf/${data.orders[0].download_token}`, `${data.orders[0].nome ?? 'figurinha'}_Copa2026.pdf`, `pdf-${data.orders[0].download_token}`)}
               sharing={sharing === data.orders[0].download_token}
+              downloading={downloading}
             />
           )
         )}
@@ -163,18 +205,20 @@ export default function AreaPage() {
 
 /* ── Card da figurinha ── */
 function StickerCard({
-  order,
-  onShare,
-  sharing,
-  compact = false,
+  order, onShare, onDownloadPng, onDownloadPdf, sharing, downloading, compact = false,
 }: {
   order: OrderCard
   onShare: () => void
+  onDownloadPng: () => void
+  onDownloadPdf: () => void
   sharing: boolean
+  downloading: string | null
   compact?: boolean
 }) {
   const nome = order.nome ?? 'Torcedor(a)'
   const d    = order.dados_figurinha ?? {}
+  const dlPngKey = `png-${order.download_token}`
+  const dlPdfKey = `pdf-${order.download_token}`
 
   return (
     <div style={{ ...(compact ? s.cardCompact : s.card) }}>
@@ -212,20 +256,20 @@ function StickerCard({
 
       {/* Botões */}
       <div style={compact ? s.btnsCompact : s.btns}>
-        <a
-          href={`/api/download/${order.download_token}`}
-          download
-          style={s.btnPrimary}
+        <button
+          onClick={onDownloadPng}
+          disabled={!!downloading}
+          style={{ ...s.btnPrimary, opacity: downloading === dlPngKey ? 0.7 : 1, border: 'none', cursor: downloading ? 'not-allowed' : 'pointer' }}
         >
-          ⬇ Baixar PNG
-        </a>
-        <a
-          href={`/api/download/pdf/${order.download_token}`}
-          download
-          style={s.btnSecondary}
+          {downloading === dlPngKey ? '⏳ Baixando...' : '⬇ Baixar PNG'}
+        </button>
+        <button
+          onClick={onDownloadPdf}
+          disabled={!!downloading}
+          style={{ ...s.btnSecondary, opacity: downloading === dlPdfKey ? 0.7 : 1, border: '1px solid rgba(255,255,255,0.15)', cursor: downloading ? 'not-allowed' : 'pointer' }}
         >
-          📄 Baixar PDF (12 figurinhas)
-        </a>
+          {downloading === dlPdfKey ? '⏳ Gerando PDF...' : '📄 Baixar PDF (12 figurinhas)'}
+        </button>
         <button
           onClick={onShare}
           disabled={sharing}

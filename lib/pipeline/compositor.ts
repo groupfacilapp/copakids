@@ -178,9 +178,14 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
 
   const overlayPng = canvas.toBuffer('image/png')
 
-  // ── 5. Compositar overlay final + resize para 768×1024 ───────────────────
-  const finalBuffer = await sharp(withBadge)
+  // ── 5. Compositar overlay final (sem resize aqui para não quebrar as dimensões)
+  const composited2 = await sharp(withBadge)
     .composite([{ input: overlayPng }])
+    .png()
+    .toBuffer()
+
+  // ── 6. Resize final para 768×1024 (etapa separada)
+  const finalBuffer = await sharp(composited2)
     .resize(768, 1024, { fit: 'fill' })
     .png()
     .toBuffer()
