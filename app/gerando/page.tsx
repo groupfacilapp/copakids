@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useFigurinhaStore, formatBirthDate } from '@/lib/store'
+import { readUTM } from '@/lib/utm'
 
 type Stage =
   | 'face_start'
@@ -144,12 +145,13 @@ export default function GerandoPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             rembgUrl,
-            nome:   store.name.toUpperCase(),
-            email:  store.email,
-            data:   birthDate,
-            altura: heightM,
-            peso:   weightKg,
-            clube:  store.club,
+            nome:       store.name.toUpperCase(),
+            email:      store.email,
+            data:       birthDate,
+            altura:     heightM,
+            peso:       weightKg,
+            clube:      store.club,
+            utm_params: readUTM(),
           }),
         })
         if (!finishRes.ok) throw new Error((await finishRes.json()).error)

@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useFigurinhaStore, formatBirthDate, getPlayerNumber } from '@/lib/store'
 import { FigurinhaCard } from '@/components/FigurinhaCard'
 import { Testimonials } from '@/components/Testimonials'
+import { readUTM, appendUTMToUrl } from '@/lib/utm'
 
-const CHECKOUT_URL = 'https://pay.kiwify.com.br/yRmTtd1'
+const CHECKOUT_BASE = 'https://pay.kiwify.com.br/yRmTtd1'
 
 const TRUST_ITEMS = [
   { icon: '⚡', text: 'ACESSO LIBERADO NA HORA' },
@@ -102,7 +103,7 @@ export default function SuaFigurinhaPage() {
   }, [])
 
   const handleCheckout = useCallback(() => {
-    window.location.href = CHECKOUT_URL
+    window.location.href = appendUTMToUrl(CHECKOUT_BASE, readUTM())
   }, [])
 
   if (!store.name) return null

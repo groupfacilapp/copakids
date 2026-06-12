@@ -37,7 +37,7 @@ async function ensureBuckets() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { rembgUrl, nome, email, data, altura, peso, clube } = await req.json()
+    const { rembgUrl, nome, email, data, altura, peso, clube, utm_params } = await req.json()
     if (!rembgUrl) return NextResponse.json({ error: 'rembgUrl obrigatório' }, { status: 400 })
     if (!isTrustedImageUrl(rembgUrl)) {
       return NextResponse.json({ error: 'URL de imagem inválida' }, { status: 400 })
@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
         nome: nome ?? null,
         dados_figurinha: { data, altura, peso, clube },
         storage_path: storagePath,
+        utm_params: utm_params ?? null,
         paid: false,
       } as Partial<OrderRow>)
     } catch (dbErr) {

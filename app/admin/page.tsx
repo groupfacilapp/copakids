@@ -14,6 +14,7 @@ interface Order {
   order_bump_products: string[]
   download_token: string
   job_id: string | null
+  utm_params: Record<string, string> | null
 }
 
 interface Metrics {
@@ -220,6 +221,15 @@ export default function AdminPage() {
                     <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
                       background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>
                       PDF
+                    </span>
+                  )}
+                  {/* UTM source badge */}
+                  {order.utm_params?.utm_source && (
+                    <span title={JSON.stringify(order.utm_params)}
+                      style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                        background: 'rgba(34,211,238,0.12)', color: '#22d3ee', cursor: 'default' }}>
+                      📊 {order.utm_params.utm_source}
+                      {order.utm_params.utm_medium ? ` / ${order.utm_params.utm_medium}` : ''}
                     </span>
                   )}
                 </div>

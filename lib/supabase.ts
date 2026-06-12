@@ -14,6 +14,7 @@ export interface OrderRow {
   paid_at: string | null
   kiwify_order_id: string | null
   order_bump_products: string[] | null
+  utm_params: Record<string, string> | null
   created_at: string
 }
 

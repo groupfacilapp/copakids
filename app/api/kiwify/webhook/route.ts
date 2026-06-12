@@ -32,6 +32,7 @@ interface KiwifyPayload {
   buyer_email?: string
   buyer_name?: string
   buyer_cellphone?: string
+  TrackingParameters?: Record<string, string>
 }
 
 function validateSecret(req: NextRequest, bodyToken?: string): boolean {
@@ -109,6 +110,9 @@ export async function POST(req: NextRequest) {
   }
 
   const orderBumpProductIds = extractOrderBumpProductIds(body)
+  const utmParams = body.TrackingParameters && Object.keys(body.TrackingParameters).length > 0
+    ? body.TrackingParameters
+    : null
 
   const sb = getSupabaseAdmin()
 
@@ -143,6 +147,7 @@ export async function POST(req: NextRequest) {
       nome:  order.nome ?? buyerName ?? null,
       phone: buyerPhone || null,
       order_bump_products: orderBumpProductIds.length > 0 ? orderBumpProductIds : [],
+      utm_params: utmParams,
     } as Partial<OrderRow>)
     .eq('id', order.id)
 
