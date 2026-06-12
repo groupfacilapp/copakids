@@ -1,418 +1,540 @@
-import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
-import { notFound } from 'next/navigation'
+'use client'
 
-interface Props {
-  params: Promise<{ token: string }>
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+
+interface OrderCard {
+  id: string
+  nome: string | null
+  dados_figurinha: Record<string, string> | null
+  created_at: string
+  download_token: string
+  preview_url: string | null
 }
 
-type OrderCard = Pick<
-  OrderRow,
-  'id' | 'paid' | 'nome' | 'dados_figurinha' | 'created_at' | 'download_token' | 'sticker_path' | 'order_bump_products'
->
+interface AreaData {
+  nome: string
+  orders: OrderCard[]
+  has_pdf: boolean
+}
 
-export default async function AreaPage({ params }: Props) {
-  const { token } = await params
+type Tab = 'figurinhas' | 'pdfs'
 
-  if (!token || token.length < 32) return notFound()
+export default function AreaPage() {
+  const params = useParams()
+  const token = params?.token as string
 
-  let thisOrder: OrderCard | null = null
-  let allOrders: OrderCard[] = []
+  const [data, setData]     = useState<AreaData | null>(null)
+  const [status, setStatus] = useState<'loading' | 'error' | 'pending' | 'ok'>('loading')
+  const [tab, setTab]       = useState<Tab>('figurinhas')
 
-  try {
-    const sb = getSupabaseAdmin()
+  useEffect(() => {
+    if (!token) return
+    fetch(`/api/area/data/${token}`)
+      .then(r => r.json())
+      .then(json => {
+        if (json.pending) { setStatus('pending'); return }
+        if (json.error)   { setStatus('error');   return }
+        setData(json)
+        setStatus('ok')
+      })
+      .catch(() => setStatus('error'))
+  }, [token])
 
-    // Primeiro: encontra o pedido pelo token (sem order_bump_products — pode não existir ainda)
-    const { data: found, error: findErr } = await sb
-      .from('orders')
-      .select('id, paid, nome, dados_figurinha, created_at, download_token, sticker_path, email')
-      .eq('download_token', token)
-      .single()
+  if (status === 'loading') return <Screen><Loading /></Screen>
+  if (status === 'error')   return <Screen><ErrorMsg /></Screen>
+  if (status === 'pending') return <Screen><Pending token={token} /></Screen>
+  if (!data) return null
 
-    if (findErr) console.error('[area] find error:', findErr)
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    thisOrder = found as any
-
-    if (thisOrder && (thisOrder as unknown as { email: string | null }).email && thisOrder.paid) {
-      // Busca todas as figurinhas pagas deste email
-      const email = (thisOrder as unknown as { email: string }).email
-
-      // Tenta com order_bump_products; se falhar (coluna não existe), busca sem
-      let allFound: unknown[] | null = null
-      const { data: withBump, error: bumpErr } = await sb
-        .from('orders')
-        .select('id, paid, nome, dados_figurinha, created_at, download_token, sticker_path, order_bump_products')
-        .eq('email', email)
-        .eq('paid', true)
-        .order('created_at', { ascending: false })
-
-      if (!bumpErr) {
-        allFound = withBump as unknown[]
-      } else {
-        const { data: withoutBump } = await sb
-          .from('orders')
-          .select('id, paid, nome, dados_figurinha, created_at, download_token, sticker_path')
-          .eq('email', email)
-          .eq('paid', true)
-          .order('created_at', { ascending: false })
-        allFound = withoutBump as unknown[]
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      allOrders = (allFound as any[]) ?? []
-    }
-  } catch {
-    // env vars ausentes ou erro de conexão
-  }
-
-  if (!thisOrder) return notFound()
-
-  // Pendente: mostra tela de espera
-  if (!thisOrder.paid) {
-    return <PendingPage token={token} />
-  }
-
-  const nome = thisOrder.nome ?? 'Torcedor(a)'
-  const primeiroNome = nome.split(' ')[0]
-
-  // Verifica se alguma das compras tem PDF
-  const pdfProductId = process.env.KIWIFY_PDF_PRODUCT_ID ?? ''
-  const hasPdf = allOrders.some(o =>
-    Array.isArray(o.order_bump_products) &&
-    (o.order_bump_products as string[]).some(pid =>
-      !pdfProductId || pid === pdfProductId
-    ) &&
-    (o.order_bump_products as string[]).length > 0
-  )
-
-  // Token do pedido mais recente (para link do PDF)
-  const pdfToken = allOrders[0]?.download_token ?? token
-
-  // Gera signed URLs para previews disponíveis
-  const ordersWithPreviews = await Promise.all(
-    allOrders.map(async (o) => {
-      let previewUrl: string | null = null
-      if (o.sticker_path) {
-        try {
-          const { data: signed } = await getSupabaseAdmin().storage
-            .from('stickers')
-            .createSignedUrl(o.sticker_path, 600)
-          previewUrl = signed?.signedUrl ?? null
-        } catch { /* sem preview */ }
-      }
-      return { ...o, previewUrl }
-    })
-  )
+  const primeiroNome = data.nome.split(' ')[0]
+  const tabs: { id: Tab; label: string; icon: string }[] = [
+    { id: 'figurinhas', label: 'Figurinhas',  icon: '🗂️' },
+    { id: 'pdfs',       label: 'PDFs',        icon: '📄' },
+  ]
 
   return (
-    <main style={styles.main}>
-      <div style={styles.card}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div style={{ fontSize: 44, lineHeight: 1 }}>⚽</div>
-          <div style={styles.headerTitle}>Área do Torcedor</div>
-          <div style={styles.headerSub}>Copa do Mundo 2026</div>
+    <div style={s.page}>
+      {/* Nav */}
+      <nav style={s.nav}>
+        <div style={s.navLeft}>
+          <span style={{ fontSize: 20 }}>⚽</span>
+          <span style={s.navTitle}>MINHA ÁREA</span>
         </div>
+        <a href="/" style={s.sairBtn}>Sair</a>
+      </nav>
 
-        <div style={{ padding: '28px 24px' }}>
-          {/* Saudação */}
-          <p style={styles.greeting}>
-            Olá, <strong style={{ color: '#FFD500' }}>{primeiroNome}</strong>! 🎉
-          </p>
-          <p style={styles.greetingSub}>
-            {allOrders.length === 1
-              ? 'Sua figurinha está pronta para download.'
-              : `Você tem ${allOrders.length} figurinhas prontas para download.`}
-          </p>
+      {/* Saudação */}
+      <div style={s.greeting}>
+        <h2 style={s.greetingTitle}>OLÁ! TUDO PRONTINHO<br />PRA VOCÊ BAIXAR 🏆</h2>
+        <p style={s.greetingSub}>
+          {data.orders.length} {data.orders.length === 1 ? 'arquivo liberado' : 'arquivos liberados'}
+        </p>
+      </div>
 
-          {/* Cards das figurinhas */}
-          <div style={allOrders.length > 1 ? styles.cardsGrid : undefined}>
-            {ordersWithPreviews.map((o, i) => {
-              const d = (o.dados_figurinha ?? {}) as Record<string, string>
-              const nomeCard = o.nome ?? 'Figurinha'
-              const createdAt = new Date(o.created_at).toLocaleDateString('pt-BR')
-              return (
-                <div key={o.id} style={styles.figurinhaCard}>
-                  {/* Preview */}
-                  <div style={styles.previewBox}>
-                    {o.previewUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={o.previewUrl}
-                        alt={`Figurinha ${nomeCard}`}
-                        style={styles.previewImg}
-                      />
-                    ) : (
-                      <div style={styles.previewPlaceholder}>
-                        <div style={{ fontSize: 32 }}>⚽</div>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
-                          Figurinha #{i + 1}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+      {/* Tabs */}
+      <div style={s.tabBar}>
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            style={{ ...s.tabBtn, ...(tab === t.id ? s.tabBtnActive : {}) }}
+          >
+            <span style={{ fontSize: 22 }}>{t.icon}</span>
+            <span style={s.tabLabel}>{t.label}</span>
+          </button>
+        ))}
+      </div>
 
-                  {/* Info */}
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 4, textAlign: 'center' }}>
-                    {d.clube ? `🏟️ ${d.clube}` : nomeCard}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 14, textAlign: 'center' }}>
-                    Comprada em {createdAt}
-                  </div>
-
-                  {/* Botão download */}
-                  <a
-                    href={`/api/download/${o.download_token}`}
-                    download
-                    style={styles.btnDownload}
-                  >
-                    ⬇️ Baixar figurinha
-                  </a>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Aviso formato */}
-          <p style={styles.formatNote}>
-            PNG em alta resolução • Sem marca d&apos;água • Pode baixar quantas vezes quiser
-          </p>
-
-          {/* Seção PDF */}
-          {hasPdf && (
-            <div style={styles.pdfSection}>
-              <div style={styles.pdfIcon}>📄</div>
-              <div style={styles.pdfTitle}>Guia de Impressão</div>
-              <div style={styles.pdfDesc}>
-                Dicas de como imprimir sua figurinha em alta qualidade — tamanhos, papéis e configurações ideais.
-              </div>
-              <a
-                href={`/api/download/pdf/${pdfToken}`}
-                download
-                style={styles.btnPdf}
-              >
-                📥 Baixar PDF
-              </a>
+      {/* Conteúdo */}
+      <div style={s.content}>
+        {tab === 'figurinhas' && (
+          <>
+            <SectionHeader title="🏆 FIGURINHAS" count={data.orders.length} />
+            <div style={s.cardsRow}>
+              {data.orders.map(o => (
+                <FigurinhaCard key={o.id} order={o} />
+              ))}
+              <NewCard />
             </div>
-          )}
+          </>
+        )}
 
-          {/* Gerar nova */}
-          <div style={styles.divider} />
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 12, textAlign: 'center', margin: '0 0 12px' }}>
-            Quer gerar uma nova figurinha?
-          </p>
-          <a href="/" style={styles.btnNew}>
-            ⚽ Gerar nova figurinha
+        {tab === 'pdfs' && (
+          <>
+            <SectionHeader title="📄 PDFS" count={data.orders.length} />
+            {data.orders.map(o => (
+              <PdfCard key={o.id} order={o} />
+            ))}
+          </>
+        )}
+
+        {/* Quer mais */}
+        <div style={s.querMais}>
+          <p style={s.querMaisTitle}>Quer mais?</p>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`Olha minha figurinha da Copa 2026! 🏆 copa-figurinhas2026.vercel.app`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={s.btnShare}
+          >
+            💬 COMPARTILHAR COM AMIGOS
+          </a>
+          <a href="/" style={s.btnBuyAgain}>
+            🛒 COMPRAR DE NOVO
           </a>
         </div>
-
-        <div style={styles.footer}>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, margin: 0 }}>
-            Figurinha Copa 2026 • Produto digital exclusivo
-          </p>
-        </div>
       </div>
-    </main>
+    </div>
   )
 }
 
-function PendingPage({ token }: { token: string }) {
+/* ── Sub-components ── */
+
+function FigurinhaCard({ order }: { order: OrderCard }) {
+  const nome = order.nome ?? 'Figurinha'
+  const d = order.dados_figurinha ?? {}
+  const whatsappText = encodeURIComponent(`Olha minha figurinha da Copa 2026! 🏆`)
+
   return (
-    <main style={styles.main}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <div style={{ fontSize: 44, lineHeight: 1 }}>⚽</div>
-          <div style={styles.headerTitle}>Área do Torcedor</div>
-          <div style={styles.headerSub}>Copa do Mundo 2026</div>
-        </div>
-        <div style={{ padding: '32px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>⏳</div>
-          <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, margin: '0 0 10px' }}>
-            Aguardando confirmação do pagamento
-          </p>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, lineHeight: 1.6, margin: '0 0 24px' }}>
-            Assim que confirmado, você receberá um email com o link. Pode levar alguns minutos.
-          </p>
-          <a href={`/area/${token}`} style={styles.btnRefresh}>🔄 Verificar novamente</a>
-        </div>
-        <div style={styles.footer}>
-          <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, margin: 0 }}>
-            Figurinha Copa 2026 • Produto digital exclusivo
-          </p>
-        </div>
+    <div style={s.card}>
+      {/* Preview */}
+      <div style={s.cardPreview}>
+        {order.preview_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={order.preview_url} alt={nome} style={s.cardImg} />
+        ) : (
+          <div style={s.cardImgPlaceholder}>
+            <span style={{ fontSize: 36 }}>⚽</span>
+          </div>
+        )}
       </div>
-    </main>
+
+      {/* Info */}
+      <p style={s.cardNome}>{nome}</p>
+      {d.clube && <p style={s.cardSub}>{d.clube}</p>}
+
+      <a href={`/api/download/${order.download_token}`} download style={s.btnDownload}>
+        ⬇ BAIXAR
+      </a>
+      <a
+        href={`https://wa.me/?text=${whatsappText}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={s.btnWhatsapp}
+      >
+        <WhatsappIcon /> ENVIAR NO WHATSAPP
+      </a>
+    </div>
   )
 }
 
-/* ── Estilos inline ── */
-const styles = {
-  main: {
+function NewCard() {
+  return (
+    <a href="/" style={s.newCard}>
+      <div style={s.newCardPlus}>+</div>
+      <p style={s.newCardLabel}>CRIAR FIGURINHA</p>
+    </a>
+  )
+}
+
+function PdfCard({ order }: { order: OrderCard }) {
+  const nome = order.nome ?? 'Figurinha'
+  const whatsappText = encodeURIComponent(`Olha minha figurinha da Copa 2026! 🏆`)
+
+  return (
+    <div style={s.pdfCard}>
+      {/* Thumbnail */}
+      <div style={s.pdfThumb}>
+        {order.preview_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={order.preview_url} alt={nome} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 32 }}>📄</div>
+        )}
+      </div>
+
+      {/* Info + botões */}
+      <div style={{ flex: 1 }}>
+        <p style={s.pdfTitle}>PDF — {nome}</p>
+        <a href={`/api/download/pdf/${order.download_token}`} download style={s.btnDownload}>
+          ⬇ BAIXAR
+        </a>
+        <a
+          href={`https://wa.me/?text=${whatsappText}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ ...s.btnWhatsapp, marginTop: 8 }}
+        >
+          <WhatsappIcon /> ENVIAR NO WHATSAPP
+        </a>
+      </div>
+    </div>
+  )
+}
+
+function SectionHeader({ title, count }: { title: string; count: number }) {
+  return (
+    <div style={s.sectionHeader}>
+      <span style={s.sectionTitle}>{title}</span>
+      <span style={s.sectionCount}>{count} {count === 1 ? 'item' : 'itens'}</span>
+    </div>
+  )
+}
+
+function WhatsappIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }}>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  )
+}
+
+function Screen({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ minHeight: '100vh', background: '#FFD600', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
+      {children}
+    </div>
+  )
+}
+
+function Loading() {
+  return <div style={{ fontSize: 32, color: '#0a3d8f' }}>⏳</div>
+}
+
+function ErrorMsg() {
+  return (
+    <div style={{ textAlign: 'center', color: '#0a3d8f' }}>
+      <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
+      <p style={{ fontWeight: 700 }}>Link não encontrado</p>
+      <a href="/area" style={{ color: '#0a3d8f', fontSize: 14 }}>Recuperar acesso por email</a>
+    </div>
+  )
+}
+
+function Pending({ token }: { token: string }) {
+  return (
+    <div style={{ textAlign: 'center', color: '#0a3d8f', maxWidth: 320, padding: '0 20px' }}>
+      <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+      <p style={{ fontWeight: 700, fontSize: 18 }}>Aguardando confirmação do pagamento</p>
+      <p style={{ fontSize: 14, lineHeight: 1.5 }}>Quando confirmado você receberá um email. Pode levar alguns minutos.</p>
+      <a href={`/area/${token}`} style={{ display: 'inline-block', marginTop: 16, background: '#0a3d8f', color: '#fff', padding: '12px 24px', borderRadius: 50, textDecoration: 'none', fontWeight: 700 }}>
+        🔄 Verificar novamente
+      </a>
+    </div>
+  )
+}
+
+/* ── Estilos ── */
+const s = {
+  page: {
     minHeight: '100vh',
-    background: 'linear-gradient(160deg, #0D1B4B 0%, #091830 60%, #050E24 100%)',
+    background: '#FFD600',
+    fontFamily: '"Arial", sans-serif',
+    paddingBottom: 40,
+  },
+  nav: {
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    padding: '14px 20px',
+    background: '#FFD600',
+  },
+  navLeft: {
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+  },
+  navTitle: {
+    fontWeight: 900,
+    fontSize: 14,
+    color: '#0a3d8f',
+    letterSpacing: 1,
+  },
+  sairBtn: {
+    fontWeight: 700,
+    fontSize: 14,
+    color: '#0a3d8f',
+    textDecoration: 'underline' as const,
+  },
+  greeting: {
+    padding: '4px 20px 20px',
+    textAlign: 'center' as const,
+  },
+  greetingTitle: {
+    fontSize: 22,
+    fontWeight: 900,
+    color: '#0a3d8f',
+    letterSpacing: 1,
+    margin: '0 0 6px',
+    lineHeight: 1.3,
+    textTransform: 'uppercase' as const,
+  },
+  greetingSub: {
+    fontSize: 13,
+    color: '#0a3d8f',
+    margin: 0,
+    opacity: 0.7,
+  },
+  tabBar: {
+    display: 'flex' as const,
+    gap: 10,
+    padding: '0 16px 16px',
+    overflowX: 'auto' as const,
+  },
+  tabBtn: {
     display: 'flex' as const,
     flexDirection: 'column' as const,
     alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    padding: '24px 16px',
-    fontFamily: 'Arial, sans-serif',
+    background: 'rgba(255,255,255,0.5)',
+    border: '2px solid transparent',
+    borderRadius: 14,
+    padding: '12px 18px',
+    cursor: 'pointer' as const,
+    minWidth: 80,
+    gap: 6,
+    transition: 'all 0.15s',
   },
-  card: {
-    maxWidth: 460,
-    width: '100%',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,213,0,0.2)',
-    borderRadius: 20,
-    overflow: 'hidden' as const,
+  tabBtnActive: {
+    background: '#fff',
+    border: '2px solid #0a3d8f',
   },
-  header: {
-    background: 'linear-gradient(135deg, #009B3A, #007030)',
-    padding: '24px 20px',
-    textAlign: 'center' as const,
-  },
-  headerTitle: {
-    color: '#FFD500',
-    fontSize: 22,
-    fontWeight: 900,
-    letterSpacing: 2,
-    marginTop: 8,
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#0a3d8f',
     textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
-  headerSub: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-    marginTop: 4,
+  content: {
+    padding: '0 16px',
   },
-  greeting: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 16,
-    margin: '0 0 4px',
+  sectionHeader: {
+    display: 'flex' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: 12,
   },
-  greetingSub: {
-    color: 'rgba(255,255,255,0.55)',
-    fontSize: 13,
-    margin: '0 0 22px',
-    lineHeight: 1.5,
+  sectionTitle: {
+    fontWeight: 900,
+    fontSize: 14,
+    color: '#0a3d8f',
+    letterSpacing: 0.5,
   },
-  cardsGrid: {
+  sectionCount: {
+    fontSize: 12,
+    color: '#0a3d8f',
+    opacity: 0.6,
+  },
+  cardsRow: {
     display: 'grid' as const,
     gridTemplateColumns: 'repeat(2, 1fr)',
     gap: 12,
+    marginBottom: 24,
   },
-  figurinhaCard: {
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 14,
-    padding: '14px 12px 16px',
-    marginBottom: 0,
+  card: {
+    background: '#fff',
+    borderRadius: 18,
+    padding: 14,
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
   },
-  previewBox: {
+  cardPreview: {
     width: '100%',
     aspectRatio: '3/4',
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden' as const,
     marginBottom: 10,
-    background: 'rgba(255,255,255,0.04)',
+    background: '#f0f0f0',
     display: 'flex' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
-  previewImg: {
+  cardImg: {
     width: '100%',
     height: '100%',
     objectFit: 'cover' as const,
   },
-  previewPlaceholder: {
+  cardImgPlaceholder: {
     display: 'flex' as const,
-    flexDirection: 'column' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     width: '100%',
     height: '100%',
   },
+  cardNome: {
+    fontWeight: 900,
+    fontSize: 13,
+    color: '#0a3d8f',
+    textAlign: 'center' as const,
+    margin: '0 0 2px',
+    textTransform: 'uppercase' as const,
+  },
+  cardSub: {
+    fontSize: 11,
+    color: '#666',
+    margin: '0 0 12px',
+    textAlign: 'center' as const,
+  },
+  newCard: {
+    background: 'rgba(255,255,255,0.5)',
+    border: '2px dashed rgba(10,61,143,0.3)',
+    borderRadius: 18,
+    padding: 14,
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    textDecoration: 'none',
+    minHeight: 200,
+    cursor: 'pointer' as const,
+  },
+  newCardPlus: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    background: 'rgba(10,61,143,0.1)',
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    fontSize: 26,
+    color: '#0a3d8f',
+    marginBottom: 8,
+  },
+  newCardLabel: {
+    fontSize: 11,
+    fontWeight: 900,
+    color: '#0a3d8f',
+    textAlign: 'center' as const,
+    letterSpacing: 0.5,
+    margin: 0,
+  },
+  pdfCard: {
+    background: '#fff',
+    borderRadius: 18,
+    padding: 16,
+    display: 'flex' as const,
+    gap: 14,
+    alignItems: 'flex-start' as const,
+    marginBottom: 12,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+  },
+  pdfThumb: {
+    width: 90,
+    height: 120,
+    borderRadius: 10,
+    background: '#f0f0f0',
+    flexShrink: 0,
+    overflow: 'hidden' as const,
+  },
+  pdfTitle: {
+    fontWeight: 900,
+    fontSize: 13,
+    color: '#0a3d8f',
+    margin: '0 0 12px',
+    textTransform: 'uppercase' as const,
+  },
   btnDownload: {
     display: 'block',
     textAlign: 'center' as const,
-    background: 'linear-gradient(135deg, #FFD500, #FFA500)',
-    color: '#000',
+    background: '#0a3d8f',
+    color: '#fff',
     fontWeight: 900,
     fontSize: 12,
     textDecoration: 'none',
-    padding: '11px 8px',
+    padding: '10px 12px',
     borderRadius: 50,
     letterSpacing: 0.5,
-    textTransform: 'uppercase' as const,
+    marginBottom: 8,
   },
-  formatNote: {
-    color: 'rgba(255,255,255,0.25)',
-    fontSize: 11,
-    textAlign: 'center' as const,
-    margin: '16px 0 0',
-    lineHeight: 1.5,
-  },
-  pdfSection: {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 14,
-    padding: '20px 18px',
-    marginTop: 20,
-    textAlign: 'center' as const,
-  },
-  pdfIcon: { fontSize: 36, marginBottom: 8 },
-  pdfTitle: {
-    color: '#fff',
-    fontWeight: 700,
-    fontSize: 15,
-    marginBottom: 6,
-  },
-  pdfDesc: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 12,
-    lineHeight: 1.6,
-    marginBottom: 16,
-  },
-  btnPdf: {
-    display: 'inline-block',
-    background: 'rgba(255,255,255,0.1)',
-    border: '1px solid rgba(255,255,255,0.2)',
-    color: '#fff',
-    fontWeight: 700,
-    fontSize: 13,
-    textDecoration: 'none',
-    padding: '12px 24px',
-    borderRadius: 50,
-    letterSpacing: 0.5,
-  },
-  divider: {
-    borderTop: '1px solid rgba(255,255,255,0.08)',
-    margin: '24px 0 16px',
-  },
-  btnNew: {
+  btnWhatsapp: {
     display: 'block',
     textAlign: 'center' as const,
-    background: 'rgba(0,155,58,0.12)',
-    border: '1px solid rgba(0,155,58,0.35)',
-    color: '#4ddb88',
-    fontWeight: 700,
-    fontSize: 14,
+    background: '#25D366',
+    color: '#fff',
+    fontWeight: 900,
+    fontSize: 12,
     textDecoration: 'none',
-    padding: '12px 24px',
+    padding: '10px 12px',
     borderRadius: 50,
     letterSpacing: 0.5,
   },
-  btnRefresh: {
-    display: 'inline-block',
-    background: 'rgba(255,255,255,0.08)',
-    color: 'rgba(255,255,255,0.6)',
+  querMais: {
+    background: '#fff',
+    borderRadius: 18,
+    padding: '20px 16px',
+    marginTop: 8,
+    textAlign: 'center' as const,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+  },
+  querMaisTitle: {
+    fontSize: 14,
+    color: '#444',
+    margin: '0 0 14px',
+  },
+  btnShare: {
+    display: 'block',
+    background: '#25D366',
+    color: '#fff',
+    fontWeight: 900,
     fontSize: 13,
     textDecoration: 'none',
-    padding: '10px 20px',
+    padding: '14px',
     borderRadius: 50,
-    border: '1px solid rgba(255,255,255,0.1)',
+    marginBottom: 10,
+    letterSpacing: 0.5,
   },
-  footer: {
-    background: 'rgba(0,0,0,0.3)',
-    padding: '14px 24px',
-    textAlign: 'center' as const,
+  btnBuyAgain: {
+    display: 'block',
+    background: 'transparent',
+    border: '2px solid #0a3d8f',
+    color: '#0a3d8f',
+    fontWeight: 900,
+    fontSize: 13,
+    textDecoration: 'none',
+    padding: '12px',
+    borderRadius: 50,
+    letterSpacing: 0.5,
   },
 }
