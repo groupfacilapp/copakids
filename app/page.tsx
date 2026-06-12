@@ -4,17 +4,22 @@ import React, { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Testimonials } from '@/components/Testimonials'
-import stickerSrc from '@/public/assets/sample_figurinha_web.png'
+import sticker1 from '@/public/assets/sample_figurinha_web.png'
+import sticker2 from '@/public/assets/sample_figurinha_crianca2_web.png'
+import sticker3 from '@/public/assets/sample_figurinha_crianca3_web.png'
+import type { StaticImageData } from 'next/image'
+
+const STICKERS: StaticImageData[] = [sticker1, sticker2, sticker3]
 
 /* Figurinha real gerada — mostra o modelo/produto como preview */
-function StickerImg({ size, fluid = false }: { size?: number; fluid?: boolean }) {
+function StickerImg({ src, size, fluid = false }: { src: StaticImageData; size?: number; fluid?: boolean }) {
   const radius = size ? Math.round(size * 0.054) : 10
   const shadow = '0 16px 48px rgba(0,0,0,0.42), 0 3px 12px rgba(0,0,0,0.22)'
 
   if (fluid) {
     return (
       <Image
-        src={stickerSrc}
+        src={src}
         alt="Figurinha Copa 2026"
         draggable={false}
         placeholder="blur"
@@ -26,7 +31,7 @@ function StickerImg({ size, fluid = false }: { size?: number; fluid?: boolean })
 
   return (
     <Image
-      src={stickerSrc}
+      src={src}
       alt="Figurinha Copa 2026"
       draggable={false}
       placeholder="blur"
@@ -176,7 +181,7 @@ export default function LandingPage() {
                 flexShrink: 0,
               }}
             >
-              <StickerImg size={208} />
+              <StickerImg src={STICKERS[1]} size={208} />
             </div>
 
             {/* Center card */}
@@ -189,7 +194,7 @@ export default function LandingPage() {
                 flexShrink: 0,
               }}
             >
-              <StickerImg size={208} />
+              <StickerImg src={STICKERS[0]} size={208} />
             </div>
 
             {/* Right card */}
@@ -203,7 +208,7 @@ export default function LandingPage() {
                 flexShrink: 0,
               }}
             >
-              <StickerImg size={208} />
+              <StickerImg src={STICKERS[2]} size={208} />
             </div>
           </div>
 
@@ -339,14 +344,14 @@ export default function LandingPage() {
           <div
             style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}
           >
-            {[0,1,2,3,4,5].map((i) => (
+            {[0,1,2,0,1,2].map((srcIdx, i) => (
               <div
                 key={i}
                 style={{
                   transform: i % 2 === 0 ? 'rotate(-2deg)' : 'rotate(2deg)',
                 }}
               >
-                <StickerImg size={undefined} fluid />
+                <StickerImg src={STICKERS[srcIdx]} fluid />
               </div>
             ))}
           </div>
