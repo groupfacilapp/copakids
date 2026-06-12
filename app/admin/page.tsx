@@ -2,199 +2,256 @@
 
 import React, { useState, useCallback } from 'react'
 
-interface Job {
+interface Order {
   id: string
-  nome: string
-  email: string
-  clube: string
-  data: string
-  altura: string
-  peso: string
+  email: string | null
+  nome: string | null
   paid: boolean
-  createdAt: string
+  paid_at: string | null
+  created_at: string
+  sticker_path: string | null
+  dados_figurinha: Record<string, string> | null
+  order_bump_products: string[]
+  download_token: string
+  job_id: string | null
+}
+
+interface Metrics {
+  total: number
+  paid: number
+  unpaid: number
+  downloaded: number
+  withPdf: number
+  revenue: number
+  totalCost: number
+  wasteCost: number
+  profit: number
+  conversion: number
+  dlRate: number
+  costPerGen: number
+  pricePerSale: number
+}
+
+function brl(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function pct(v: number) {
+  return v.toFixed(1) + '%'
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'agora'
+  if (m < 60) return `${m}min atrás`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h atrás`
+  return `${Math.floor(h / 24)}d atrás`
+}
+
+const S: Record<string, React.CSSProperties> = {
+  card: { background: '#1a2744', borderRadius: 16, padding: '18px 20px', border: '1px solid rgba(255,255,255,0.07)' },
+  label: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 6 },
+  big: { fontSize: 36, fontWeight: 900, lineHeight: 1 },
+  sub: { fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 4 },
 }
 
 export default function AdminPage() {
-  const [secret, setSecret] = useState('')
-  const [authed, setAuthed] = useState(false)
-  const [jobs, setJobs] = useState<Job[]>([])
+  const [secret, setSecret]   = useState('')
+  const [authed, setAuthed]   = useState(false)
+  const [orders, setOrders]   = useState<Order[]>([])
+  const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError]     = useState('')
   const [downloading, setDownloading] = useState<string | null>(null)
   const [dlError, setDlError] = useState<Record<string, string>>({})
+  const [filter, setFilter]   = useState<'all' | 'paid' | 'unpaid'>('all')
 
-  const login = useCallback(async () => {
-    setLoading(true)
-    setError('')
+  const load = useCallback(async (sec = secret) => {
+    setLoading(true); setError('')
     try {
-      const res = await fetch('/api/admin/jobs', {
-        headers: { 'x-admin-secret': secret },
-      })
+      const res = await fetch('/api/admin/jobs', { headers: { 'x-admin-secret': sec } })
       if (!res.ok) { setError('Senha incorreta'); return }
       const data = await res.json()
-      setJobs(data)
+      setOrders(data.orders)
+      setMetrics(data.metrics)
       setAuthed(true)
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }, [secret])
 
-  const refresh = useCallback(async () => {
-    const res = await fetch('/api/admin/jobs', {
-      headers: { 'x-admin-secret': secret },
-    })
-    setJobs(await res.json())
-  }, [secret])
-
-  const download = useCallback(async (job: Job) => {
-    setDownloading(job.id)
-    setDlError((p) => ({ ...p, [job.id]: '' }))
+  const download = useCallback(async (order: Order) => {
+    setDownloading(order.id); setDlError(p => ({ ...p, [order.id]: '' }))
     try {
-      const res = await fetch(`/api/admin/download/${job.id}`, {
+      const res = await fetch(`/api/admin/download/${order.job_id ?? order.id}`, {
         headers: { 'x-admin-secret': secret },
       })
-      if (!res.ok) {
-        const err = await res.json()
-        setDlError((p) => ({ ...p, [job.id]: err.error ?? 'Erro' }))
-        return
-      }
+      if (!res.ok) { const e = await res.json(); setDlError(p => ({ ...p, [order.id]: e.error ?? 'Erro' })); return }
       const blob = await res.blob()
       const url  = URL.createObjectURL(blob)
-      const a    = document.createElement('a')
-      a.href     = url
-      a.download = `figurinha_${job.nome.replace(/\s+/g, '_')}.png`
-      a.click()
-      URL.revokeObjectURL(url)
-      await refresh()
-    } finally {
-      setDownloading(null)
-    }
-  }, [secret, refresh])
+      const a    = Object.assign(document.createElement('a'), { href: url, download: `figurinha_4K_${order.nome ?? 'sem_nome'}.png` })
+      a.click(); URL.revokeObjectURL(url)
+    } finally { setDownloading(null) }
+  }, [secret])
 
   if (!authed) {
     return (
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D1B4B' }}>
-        <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: '100%', maxWidth: 360, textAlign: 'center' }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>🔐</div>
-          <h1 style={{ fontFamily: 'var(--font-bebas)', fontSize: 28, color: '#0D1B4B', letterSpacing: 1, marginBottom: 20 }}>
-            ADMIN
-          </h1>
+      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a1628' }}>
+        <div style={{ background: '#1a2744', borderRadius: 24, padding: 40, width: '100%', maxWidth: 360, textAlign: 'center', border: '1px solid rgba(255,213,0,0.15)' }}>
+          <div style={{ fontSize: 42, marginBottom: 10 }}>⚽</div>
+          <h1 style={{ fontFamily: 'var(--font-bebas)', fontSize: 30, color: '#FFD500', letterSpacing: 2, marginBottom: 24 }}>ADMIN</h1>
           <input
-            type="password"
-            placeholder="Senha admin"
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && login()}
-            style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '2px solid #E8EAF0', fontSize: 15, marginBottom: 12, boxSizing: 'border-box' }}
+            type="password" placeholder="Senha admin" value={secret}
+            onChange={e => setSecret(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && load()}
+            style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '2px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 15, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }}
           />
-          {error && <p style={{ color: '#E53E3E', fontSize: 13, marginBottom: 8 }}>{error}</p>}
-          <button
-            onClick={login}
-            disabled={loading}
-            style={{ width: '100%', padding: '13px', background: '#0D1B4B', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
-          >
-            {loading ? 'Entrando...' : 'ENTRAR'}
+          {error && <p style={{ color: '#ff6b6b', fontSize: 13, marginBottom: 8 }}>{error}</p>}
+          <button onClick={() => load()} disabled={loading}
+            style={{ width: '100%', padding: 14, background: 'linear-gradient(135deg,#FFD500,#FF9500)', color: '#0D1B4B', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 900, cursor: 'pointer', letterSpacing: 1 }}>
+            {loading ? 'ENTRANDO...' : 'ENTRAR'}
           </button>
         </div>
       </main>
     )
   }
 
-  const pendentes  = jobs.filter((j) => !j.paid)
-  const entregues  = jobs.filter((j) => j.paid)
+  const m = metrics!
+  const visible = orders.filter(o =>
+    filter === 'all' ? true : filter === 'paid' ? o.paid : !o.paid
+  )
 
   return (
-    <main style={{ minHeight: '100vh', background: '#F4F6FB', padding: '24px 16px' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+    <main style={{ minHeight: '100vh', background: '#0a1628', padding: '24px 16px', fontFamily: 'var(--font-barlow)' }}>
+      <div style={{ maxWidth: 780, margin: '0 auto' }}>
 
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        {/* ── Header ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-bebas)', fontSize: 32, color: '#0D1B4B', letterSpacing: 1, margin: 0 }}>
-              PAINEL ADMIN
-            </h1>
-            <p style={{ fontSize: 13, color: 'rgba(13,27,75,0.5)', marginTop: 2, fontFamily: 'var(--font-barlow)' }}>
-              {jobs.length} figurinha{jobs.length !== 1 ? 's' : ''} gerada{jobs.length !== 1 ? 's' : ''}
-            </p>
+            <h1 style={{ fontFamily: 'var(--font-bebas)', fontSize: 34, color: '#FFD500', letterSpacing: 2, margin: 0 }}>PAINEL ADMIN</h1>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>convocakids.com · custo estimado: {brl(m.costPerGen)}/geração</p>
           </div>
-          <button onClick={refresh} style={{ background: '#0D1B4B', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+          <button onClick={() => load()}
+            style={{ background: 'rgba(255,213,0,0.12)', color: '#FFD500', border: '1px solid rgba(255,213,0,0.25)', borderRadius: 10, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
             ↻ Atualizar
           </button>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 24 }}>
+        {/* ── Metrics: Volume ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 10 }}>
           {[
-            { label: 'Total', value: jobs.length, color: '#0D1B4B' },
-            { label: 'Pendentes', value: pendentes.length, color: '#E67E22' },
-            { label: 'Entregues', value: entregues.length, color: '#009B3A' },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-              <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 34, color, lineHeight: 1 }}>{value}</div>
-              <div style={{ fontSize: 12, color: 'rgba(13,27,75,0.45)', fontWeight: 600, marginTop: 2 }}>{label}</div>
+            { label: 'Geradas', value: m.total, color: '#fff', sub: 'total de figurinhas' },
+            { label: 'Pagas', value: m.paid, color: '#4ade80', sub: `${pct(m.conversion)} conversão` },
+            { label: 'Não pagaram', value: m.unpaid, color: '#fb923c', sub: `custo ${brl(m.wasteCost)}` },
+            { label: 'Baixaram', value: m.downloaded, color: '#60a5fa', sub: `${pct(m.dlRate)} dos pagos` },
+          ].map(({ label, value, color, sub }) => (
+            <div key={label} style={S.card}>
+              <div style={S.label}>{label}</div>
+              <div style={{ ...S.big, color }}>{value}</div>
+              <div style={S.sub}>{sub}</div>
             </div>
           ))}
         </div>
 
-        {/* Lista */}
-        {jobs.length === 0 ? (
-          <div style={{ background: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', color: 'rgba(13,27,75,0.4)', fontSize: 15 }}>
-            Nenhuma figurinha gerada ainda.
+        {/* ── Metrics: Financeiro ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24 }}>
+          <div style={{ ...S.card, border: '1px solid rgba(74,222,128,0.2)' }}>
+            <div style={S.label}>💰 Receita Bruta</div>
+            <div style={{ ...S.big, color: '#4ade80' }}>{brl(m.revenue)}</div>
+            <div style={S.sub}>{m.paid} vendas × {brl(m.pricePerSale)}</div>
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {[...pendentes, ...entregues].map((job) => (
-              <div
-                key={job.id}
-                style={{
-                  background: '#fff',
-                  borderRadius: 16,
-                  padding: '14px 16px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: job.paid ? '1.5px solid rgba(0,155,58,0.25)' : '1.5px solid rgba(230,126,34,0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                }}
-              >
-                {/* Status dot */}
-                <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: job.paid ? '#009B3A' : '#E67E22' }} />
+          <div style={{ ...S.card, border: '1px solid rgba(251,146,60,0.2)' }}>
+            <div style={S.label}>💸 Custo Total IA</div>
+            <div style={{ ...S.big, color: '#fb923c' }}>{brl(m.totalCost)}</div>
+            <div style={S.sub}>{m.total} gerações · {brl(m.wasteCost)} desperdiçados</div>
+          </div>
+          <div style={{ ...S.card, border: `1px solid ${m.profit >= 0 ? 'rgba(74,222,128,0.2)' : 'rgba(248,113,113,0.2)'}` }}>
+            <div style={S.label}>{m.profit >= 0 ? '📈 Lucro Líquido' : '📉 Prejuízo'}</div>
+            <div style={{ ...S.big, color: m.profit >= 0 ? '#4ade80' : '#f87171' }}>{brl(m.profit)}</div>
+            <div style={S.sub}>receita − custo IA estimado</div>
+          </div>
+        </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 18, color: '#0D1B4B', letterSpacing: 0.5, lineHeight: 1 }}>
-                    {job.nome}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(13,27,75,0.5)', fontWeight: 500, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {job.email || '—'} · {job.clube} · {new Date(job.createdAt).toLocaleDateString('pt-BR')}
-                  </div>
-                  {dlError[job.id] && (
-                    <div style={{ fontSize: 11.5, color: '#E53E3E', marginTop: 3 }}>⚠ {dlError[job.id]}</div>
+        {/* ── Filter tabs ── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {([['all', `Todos (${m.total})`], ['paid', `Pagos (${m.paid})`], ['unpaid', `Pendentes (${m.unpaid})`]] as const).map(([k, lbl]) => (
+            <button key={k} onClick={() => setFilter(k)}
+              style={{ padding: '7px 16px', borderRadius: 99, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                background: filter === k ? '#FFD500' : 'rgba(255,255,255,0.06)',
+                color: filter === k ? '#0D1B4B' : 'rgba(255,255,255,0.55)' }}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Orders list ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {visible.length === 0 && (
+            <div style={{ ...S.card, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14, padding: 40 }}>
+              Nenhum pedido encontrado.
+            </div>
+          )}
+          {visible.map(order => (
+            <div key={order.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12,
+              borderLeft: `3px solid ${order.paid ? '#4ade80' : '#fb923c'}` }}>
+
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: 'var(--font-bebas)', fontSize: 17, color: '#fff', letterSpacing: 0.5 }}>
+                    {order.nome ?? '—'}
+                  </span>
+                  {/* Status badge */}
+                  <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 99, letterSpacing: 0.8,
+                    background: order.paid ? 'rgba(74,222,128,0.15)' : 'rgba(251,146,60,0.15)',
+                    color: order.paid ? '#4ade80' : '#fb923c' }}>
+                    {order.paid ? 'PAGO' : 'PENDENTE'}
+                  </span>
+                  {/* Downloaded badge */}
+                  {order.paid && (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                      background: order.sticker_path ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.06)',
+                      color: order.sticker_path ? '#60a5fa' : 'rgba(255,255,255,0.25)' }}>
+                      {order.sticker_path ? '⬇ BAIXOU' : '⬇ NÃO BAIXOU'}
+                    </span>
+                  )}
+                  {/* PDF badge */}
+                  {order.order_bump_products?.length > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                      background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>
+                      PDF
+                    </span>
                   )}
                 </div>
-
-                {/* Ação */}
-                <button
-                  onClick={() => download(job)}
-                  disabled={downloading === job.id}
-                  style={{
-                    flexShrink: 0,
-                    padding: '8px 14px',
-                    borderRadius: 10,
-                    border: 'none',
-                    background: job.paid ? 'rgba(0,155,58,0.1)' : '#0D1B4B',
-                    color: job.paid ? '#009B3A' : '#fff',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: downloading === job.id ? 'wait' : 'pointer',
-                  }}
-                >
-                  {downloading === job.id ? '...' : job.paid ? '↓ Baixar' : '↓ Gerar'}
-                </button>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {order.email ?? '—'} · {order.dados_figurinha?.clube ?? '—'} · {timeAgo(order.created_at)}
+                </div>
+                {dlError[order.id] && (
+                  <div style={{ fontSize: 11, color: '#f87171', marginTop: 3 }}>⚠ {dlError[order.id]}</div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* Cost chip */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>
+                {order.paid ? <span style={{ color: '#4ade80' }}>+{brl(12.90)}</span> : <span style={{ color: '#fb923c' }}>−{brl(0.25)}</span>}
+              </div>
+
+              {/* Download button (admin 4K) */}
+              {order.job_id && (
+                <button onClick={() => download(order)} disabled={downloading === order.id}
+                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: downloading === order.id ? 'wait' : 'pointer',
+                    background: order.paid ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
+                    color: order.paid ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>
+                  {downloading === order.id ? '...' : '4K ↓'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.15)', marginTop: 24 }}>
+          Custo IA estimado: OpenAI gpt-image-2 (~R$0,23) + Replicate rembg (~R$0,02) = R$0,25/geração
+        </p>
       </div>
     </main>
   )
