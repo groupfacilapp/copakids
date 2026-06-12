@@ -2,14 +2,29 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FigurinhaCard } from '@/components/FigurinhaCard'
 import { Testimonials } from '@/components/Testimonials'
 
-const DEMO_CARDS = [
-  { name: 'MIGUEL S.',  number: 7,  club: 'Flamengo',   height: '1,32', weight: '28', birthDate: '14/03/2017', tilt: 'left'  as const },
-  { name: 'HELENA M.',  number: 10, club: 'Palmeiras',   height: '1,18', weight: '21', birthDate: '07/08/2019', tilt: 'none'  as const },
-  { name: 'ARTHUR L.',  number: 9,  club: 'Corinthians', height: '1,45', weight: '38', birthDate: '22/11/2015', tilt: 'right' as const },
-]
+/* Figurinha real gerada — mostra o modelo/produto como preview */
+function StickerImg({ size, fluid = false }: { size?: number; fluid?: boolean }) {
+  const w = fluid ? '100%' : size
+  const h = fluid ? undefined : (size ? Math.round(size * (1024 / 768)) : undefined)
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/assets/sample_figurinha.png"
+      alt="Figurinha Copa 2026"
+      draggable={false}
+      style={{
+        width: w,
+        height: h,
+        objectFit: 'cover',
+        borderRadius: size ? Math.round(size * 0.054) : 10,
+        boxShadow: '0 16px 48px rgba(0,0,0,0.42), 0 3px 12px rgba(0,0,0,0.22)',
+        display: 'block',
+      }}
+    />
+  )
+}
 
 const HOW_IT_WORKS = [
   { icon: '📸', title: 'Envie a foto', desc: 'Escolha uma foto do rosto do seu craque — de frente, bem iluminada.' },
@@ -125,47 +140,59 @@ export default function LandingPage() {
             Crie uma figurinha personalizada no estilo Panini oficial com a foto, nome e ficha técnica do seu pequeno campeão.
           </p>
 
-          {/* ── Sticker card stack ── */}
+          {/* ── Sticker card stack — figurinhas reais ── */}
           <div
-            className="relative flex justify-center items-end animate-fade-in-up my-8"
-            style={{ perspective: '900px', height: 280, animationDelay: '240ms' }}
+            className="animate-fade-in-up my-8"
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-end',
+              gap: 0,
+              height: 280,
+              overflow: 'visible',
+              animationDelay: '240ms',
+              position: 'relative',
+            }}
           >
             {/* Left card */}
             <div
-              className="absolute animate-float-b"
+              className="animate-float-b"
               style={{
-                transform: 'translateX(-105px) rotateY(22deg) scale(0.82)',
+                transform: 'rotate(-8deg) scale(0.82) translateX(20px)',
                 transformOrigin: 'center bottom',
                 zIndex: 1,
-                filter: 'brightness(0.85)',
+                filter: 'brightness(0.82)',
+                flexShrink: 0,
               }}
             >
-              <FigurinhaCard {...DEMO_CARDS[0]} size="md" />
+              <StickerImg size={208} />
             </div>
 
             {/* Center card */}
             <div
-              className="absolute animate-float"
+              className="animate-float"
               style={{
-                transform: 'scale(1.05)',
+                transform: 'scale(1.06)',
                 transformOrigin: 'center bottom',
                 zIndex: 10,
+                flexShrink: 0,
               }}
             >
-              <FigurinhaCard {...DEMO_CARDS[1]} size="md" />
+              <StickerImg size={208} />
             </div>
 
             {/* Right card */}
             <div
-              className="absolute animate-float-c"
+              className="animate-float-c"
               style={{
-                transform: 'translateX(105px) rotateY(-22deg) scale(0.82)',
+                transform: 'rotate(8deg) scale(0.82) translateX(-20px)',
                 transformOrigin: 'center bottom',
                 zIndex: 1,
-                filter: 'brightness(0.85)',
+                filter: 'brightness(0.82)',
+                flexShrink: 0,
               }}
             >
-              <FigurinhaCard {...DEMO_CARDS[2]} size="md" />
+              <StickerImg size={208} />
             </div>
           </div>
 
@@ -297,27 +324,18 @@ export default function LandingPage() {
             Veja o que outros pais estão fazendo!
           </p>
 
-          {/* Grid of demo cards */}
+          {/* Grid de figurinhas reais */}
           <div
-            className="grid justify-items-center"
-            style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}
           >
-            {[
-              { name: 'DAVI M.',    number: 11, club: 'Flamengo',   height: '1,28', weight: '24', birthDate: '03/05/2018' },
-              { name: 'VALENTINA', number: 3,  club: 'Santos',     height: '1,15', weight: '19', birthDate: '17/09/2020' },
-              { name: 'GABRIEL L.',number: 6,  club: 'Grêmio',     height: '1,52', weight: '42', birthDate: '08/01/2014' },
-              { name: 'ISABELLA',  number: 8,  club: 'Atlético MG',height: '1,22', weight: '22', birthDate: '29/11/2019' },
-              { name: 'LUCAS P.',  number: 14, club: 'São Paulo',  height: '1,38', weight: '31', birthDate: '14/06/2016' },
-              { name: 'SOPHIA R.', number: 5,  club: 'Internacional',height:'1,10',weight: '17', birthDate: '21/02/2021' },
-            ].map((card, i) => (
+            {[0,1,2,3,4,5].map((i) => (
               <div
                 key={i}
                 style={{
-                  transform: i % 2 === 0 ? 'rotate(-1.5deg)' : 'rotate(1.5deg)',
-                  transition: 'transform 0.2s',
+                  transform: i % 2 === 0 ? 'rotate(-2deg)' : 'rotate(2deg)',
                 }}
               >
-                <FigurinhaCard {...card} size="sm" />
+                <StickerImg size={undefined} fluid />
               </div>
             ))}
           </div>
