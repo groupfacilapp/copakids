@@ -18,7 +18,7 @@ interface AreaData {
   has_pdf: boolean
 }
 
-const BASE_URL = 'https://copa-figurinhas2026.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://convocakids.com'
 
 export default function AreaPage() {
   const params = useParams()

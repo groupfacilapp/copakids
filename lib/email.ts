@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://copa-figurinhas2026.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://convocakids.com'
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
@@ -21,7 +21,7 @@ export async function sendDownloadEmail(opts: {
     : ''
 
   await getResend().emails.send({
-    from: 'Copa 2026 Figurinha <onboarding@resend.dev>',
+    from: 'Convoca Kids <noreply@convocakids.com>',
     to: opts.to,
     subject: '🎽 Sua figurinha da Copa 2026 está pronta para download!',
     html: `<!DOCTYPE html>
