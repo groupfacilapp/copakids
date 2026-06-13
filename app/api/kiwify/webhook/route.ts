@@ -38,7 +38,10 @@ interface KiwifyPayload {
 
 function validateSecret(req: NextRequest, bodyToken?: string): boolean {
   const secret = process.env.KIWIFY_WEBHOOK_SECRET
-  if (!secret) return true
+  if (!secret) {
+    console.error('[kiwify/webhook] KIWIFY_WEBHOOK_SECRET não configurado — qualquer request passa!')
+    return true
+  }
 
   const queryToken = req.nextUrl.searchParams.get('token')
   if (queryToken === secret) return true

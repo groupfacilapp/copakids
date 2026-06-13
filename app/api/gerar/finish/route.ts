@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { compositeSticker } from '@/lib/pipeline/compositor'
 import { saveJob } from '@/lib/redis'
 import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
+import { rateLimit } from '@/lib/rateLimit'
 
 export const maxDuration = 60
 
@@ -35,9 +36,26 @@ async function ensureBuckets() {
   }
 }
 
+function cap(v: unknown, max = 100): string {
+  return typeof v === 'string' ? v.slice(0, max) : ''
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { rembgUrl, nome, email, data, altura, peso, clube, utm_params } = await req.json()
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'anon'
+    if (!(await rateLimit(`finish:${ip}`, 20, 3600))) {
+      return NextResponse.json({ error: 'Muitas tentativas. Tente novamente em 1 hora.' }, { status: 429 })
+    }
+
+    const body = await req.json()
+    const { rembgUrl, utm_params } = body
+    const nome   = cap(body.nome)
+    const email  = cap(body.email, 254)
+    const data   = cap(body.data,   20)
+    const altura = cap(body.altura, 10)
+    const peso   = cap(body.peso,   10)
+    const clube  = cap(body.clube,  60)
+
     if (!rembgUrl) return NextResponse.json({ error: 'rembgUrl obrigatório' }, { status: 400 })
     if (!isTrustedImageUrl(rembgUrl)) {
       return NextResponse.json({ error: 'URL de imagem inválida' }, { status: 400 })

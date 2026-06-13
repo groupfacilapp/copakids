@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
 import { compositeSticker } from '@/lib/pipeline/compositor'
 import { PDFDocument, rgb } from 'pdf-lib'
+import { rateLimit } from '@/lib/rateLimit'
 
 // A4 em pontos (72 dpi): 595.28 × 841.89
 const A4_W = 595.28
@@ -133,9 +134,14 @@ async function buildPdf(stickerPng: Buffer, nome: string): Promise<Uint8Array> {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'anon'
+  if (!(await rateLimit(`pdf:${ip}`, 10, 3600))) {
+    return NextResponse.json({ error: 'Muitas tentativas' }, { status: 429 })
+  }
+
   const { token } = await params
 
   if (!token || token.length < 32) {

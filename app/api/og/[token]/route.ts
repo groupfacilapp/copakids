@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
 import { compositeSticker } from '@/lib/pipeline/compositor'
+import { rateLimit } from '@/lib/rateLimit'
 
-// Endpoint público para compartilhamento social (WhatsApp, etc.)
-// Token de 64 chars hex = estatisticamente impossível de adivinhar
-// Serve o sticker PNG de pedidos pagos
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'anon'
+  if (!(await rateLimit(`og:${ip}`, 60, 3600))) {
+    return NextResponse.json({ error: 'Muitas tentativas' }, { status: 429 })
+  }
+
   const { token } = await params
   if (!token || token.length < 32) {
     return NextResponse.json({ error: 'Token inválido' }, { status: 400 })
