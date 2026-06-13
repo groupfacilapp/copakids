@@ -15,7 +15,7 @@ type Stage =
   | 'error'
 
 const STAGE_MSG: Record<Stage, string> = {
-  face_start:  '🤖 IA gerando a camiseta da Seleção...',
+  face_start:  '🤖 IA gerando a camiseta da Seleção... (pode levar até 2 min)',
   face_poll:   '🎽 Finalizando o visual da figurinha...',
   rembg_start: '✂️ Iniciando remoção do fundo...',
   rembg_poll:  '✂️ Removendo o fundo da foto...',
@@ -120,11 +120,14 @@ export default function GerandoPage() {
         for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i)
         const blob      = new Blob([bytes], { type: mimeType })
 
-        // 1. Inicia face-swap (rosto do usuário sobre camiseta_exemplo.png)
+        // 1. Inicia face-swap — OpenAI gpt-image-2 pode levar 60-120s
+        // Ticker visual anima de 5% → 47% enquanto aguarda (sem travar na tela)
         setStage('face_start')
         const fd = new FormData()
         fd.append('photo', blob, 'photo.jpg')
+        const aiTicker = setInterval(() => setProgress((p) => Math.min(p + 0.25, 47)), 1500)
         const startRes = await fetch('/api/gerar/start', { method: 'POST', body: fd })
+        clearInterval(aiTicker)
         const startData = await safeJson(startRes)
         if (!startRes.ok) throw apiError(startRes, startData)
         const faceId = startData.predictionId as string
