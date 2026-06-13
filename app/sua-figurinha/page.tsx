@@ -191,8 +191,7 @@ export default function SuaFigurinhaPage() {
                     lineHeight: 1.5,
                   }}
                 >
-                  Receba o arquivo digital para impressão e participe do sorteio.{' '}
-                  <strong>Leia o regulamento no seu e-mail.</strong>
+                  Receba o arquivo digital em alta resolução, pronto para imprimir e colecionar.
                 </p>
               </div>
 
@@ -286,7 +285,7 @@ export default function SuaFigurinhaPage() {
                     marginBottom: 16,
                   }}
                 >
-                  🏆 + Concorre a R$ 1.000 no dia 11/06/2026
+                  🏆 Edição especial Copa do Mundo 2026
                 </div>
 
                 {/* CTA */}
@@ -376,19 +375,18 @@ export default function SuaFigurinhaPage() {
                     marginBottom: 6,
                   }}
                 >
-                  ⏰ Compre <strong style={{ color: '#FFD500' }}>ANTES</strong> do início da Copa e concorra a
+                  ⚽ Deixe seu filho na história da Copa do Mundo 2026
                 </p>
                 <div
                   style={{
                     fontFamily: 'var(--font-bebas)',
-                    fontSize: 44,
+                    fontSize: 36,
                     color: '#FFD500',
                     letterSpacing: 2,
-                    lineHeight: 1,
-                    filter: 'drop-shadow(0 2px 12px rgba(255,213,0,0.4))',
+                    lineHeight: 1.1,
                   }}
                 >
-                  R$ 1.000
+                  FIGURINHA OFICIAL PERSONALIZADA
                 </div>
                 <p
                   style={{
@@ -399,7 +397,7 @@ export default function SuaFigurinhaPage() {
                     fontWeight: 500,
                   }}
                 >
-                  Sorteio em 11/06/2026 — Início dos jogos
+                  Arquivo digital em alta resolução · Pronto para imprimir
                 </p>
               </div>
 
@@ -461,8 +459,7 @@ export default function SuaFigurinhaPage() {
             lineHeight: 1.6,
           }}
         >
-          © 2026 Figurinha Copa 2026 · Produto digital para impressão · Todos os direitos reservados<br />
-          Ao comprar você concorda com os termos do sorteio disponíveis no e-mail de confirmação.
+          © 2026 Figurinha Copa 2026 · Produto digital para impressão · Todos os direitos reservados
         </p>
       </footer>
     </main>

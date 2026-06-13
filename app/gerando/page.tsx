@@ -271,13 +271,13 @@ export default function GerandoPage() {
 
         <div className="rounded-2xl text-center mt-5" style={{ background: 'linear-gradient(135deg, rgba(0,155,58,0.18), rgba(0,155,58,0.08))', border: '1.5px solid rgba(0,155,58,0.3)', padding: '14px 18px' }}>
           <p style={{ fontFamily: 'var(--font-barlow)', fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
-            🏆 Adquira sua figurinha <strong style={{ color: '#FFD500' }}>HOJE</strong> e concorra a
+            ⚽ Sua figurinha personalizada estará pronta em instantes!
           </p>
-          <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 38, color: '#009B3A', letterSpacing: 2, lineHeight: 1.1, filter: 'drop-shadow(0 2px 12px rgba(0,155,58,0.5))' }}>
-            MIL REAIS
+          <div style={{ fontFamily: 'var(--font-bebas)', fontSize: 32, color: '#009B3A', letterSpacing: 2, lineHeight: 1.2, filter: 'drop-shadow(0 2px 12px rgba(0,155,58,0.5))' }}>
+            ESTILO PANINI OFICIAL
           </div>
           <p style={{ fontFamily: 'var(--font-barlow)', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
-            no dia 11/06/2026 — início dos jogos!
+            Arquivo em alta resolução · Pronto para imprimir
           </p>
         </div>
 

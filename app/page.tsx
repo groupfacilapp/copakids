@@ -423,8 +423,7 @@ export default function LandingPage() {
               lineHeight: 1.5,
             }}
           >
-            Crie a figurinha personalizada agora e concorra a{' '}
-            <strong style={{ color: '#009B3A' }}>R$ 1.000</strong> no dia 11/06!
+            Crie a figurinha personalizada do seu filho agora e surpreenda na Copa 2026!
           </p>
           <button className="btn-primary" onClick={() => router.push('/criar')} style={{ fontSize: 20 }}>
             INICIAR AGORA — É SÓ R$ 19,90 ⚽
