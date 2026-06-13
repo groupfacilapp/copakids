@@ -77,6 +77,8 @@ export default function AdminPage() {
   const [error, setError]     = useState('')
   const [downloading, setDownloading] = useState<string | null>(null)
   const [dlError, setDlError] = useState<Record<string, string>>({})
+  const [resending, setResending] = useState<string | null>(null)
+  const [resendMsg, setResendMsg] = useState<Record<string, string>>({})
   const [filter, setFilter]   = useState<'all' | 'paid' | 'unpaid'>('all')
 
   const load = useCallback(async (sec = secret) => {
@@ -90,6 +92,19 @@ export default function AdminPage() {
       setUtmStats(data.utmStats ?? [])
       setAuthed(true)
     } finally { setLoading(false) }
+  }, [secret])
+
+  const resendEmail = useCallback(async (order: Order) => {
+    setResending(order.id); setResendMsg(p => ({ ...p, [order.id]: '' }))
+    try {
+      const res = await fetch('/api/admin/resend-email', {
+        method: 'POST',
+        headers: { 'x-admin-secret': secret, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: order.id }),
+      })
+      const data = await res.json()
+      setResendMsg(p => ({ ...p, [order.id]: res.ok ? '✅ Enviado!' : `⚠ ${data.error ?? 'Erro'}` }))
+    } finally { setResending(null) }
   }, [secret])
 
   const download = useCallback(async (order: Order) => {
@@ -317,15 +332,28 @@ export default function AdminPage() {
                 {order.paid ? <span style={{ color: '#4ade80' }}>+{brl(19.90)}</span> : <span style={{ color: '#fb923c' }}>−{brl(0.25)}</span>}
               </div>
 
-              {/* Download button (admin 4K) */}
-              {order.job_id && (
-                <button onClick={() => download(order)} disabled={downloading === order.id}
-                  style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: downloading === order.id ? 'wait' : 'pointer',
-                    background: order.paid ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
-                    color: order.paid ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>
-                  {downloading === order.id ? '...' : '4K ↓'}
-                </button>
-              )}
+              {/* Action buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, alignItems: 'flex-end' }}>
+                {/* Download 4K */}
+                {order.job_id && (
+                  <button onClick={() => download(order)} disabled={downloading === order.id}
+                    style={{ padding: '6px 12px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: downloading === order.id ? 'wait' : 'pointer',
+                      background: order.paid ? 'rgba(74,222,128,0.15)' : 'rgba(255,255,255,0.06)',
+                      color: order.paid ? '#4ade80' : 'rgba(255,255,255,0.3)' }}>
+                    {downloading === order.id ? '...' : '4K ↓'}
+                  </button>
+                )}
+                {/* Reenviar email */}
+                {order.paid && order.email && (
+                  <button onClick={() => resendEmail(order)} disabled={resending === order.id}
+                    title={`Reenviar email para ${order.email}`}
+                    style={{ padding: '6px 12px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: resending === order.id ? 'wait' : 'pointer',
+                      background: resendMsg[order.id]?.startsWith('✅') ? 'rgba(74,222,128,0.15)' : 'rgba(96,165,250,0.15)',
+                      color: resendMsg[order.id]?.startsWith('✅') ? '#4ade80' : '#60a5fa' }}>
+                    {resending === order.id ? '...' : resendMsg[order.id] || '📧'}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
