@@ -119,6 +119,14 @@ function StepProgress({ current, total }: { current: number; total: number }) {
 
 /* ─── Modal de aviso ANTES do upload ─── */
 function AvisoModal({ onConfirm, onClose }: { onConfirm: () => void; onClose: () => void }) {
+  const TIPS = [
+    { ok: true,  text: 'Rosto de frente, olhando para a câmera' },
+    { ok: true,  text: 'Foto bem iluminada, sem sombras no rosto' },
+    { ok: true,  text: 'Somente uma pessoa no enquadramento' },
+    { ok: false, text: 'Óculos de sol, filtros ou emoji sobre o rosto' },
+    { ok: false, text: 'Foto muito escura, desfocada ou de lado' },
+  ]
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -129,45 +137,68 @@ function AvisoModal({ onConfirm, onClose }: { onConfirm: () => void; onClose: ()
       onClick={onClose}
     >
       <motion.div
-        className="card-glass max-w-mobile w-full p-6"
+        className="card-glass max-w-mobile w-full"
+        style={{ padding: '20px 20px 24px', maxHeight: '90vh', overflowY: 'auto' }}
         initial={{ scale: 0.82, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0, transition: { type: 'spring', damping: 20, stiffness: 260 } }}
         exit={{ scale: 0.88, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Exemplo visual */}
-        <div className="flex justify-center mb-4">
-          <div
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: '50%',
-              overflow: 'hidden',
-              border: '4px solid #E8EAF0',
-              background: 'linear-gradient(135deg,#5CB8E8,#3A8EC0)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 64,
-            }}
-          >
-            😊
+        <div
+          className="text-center mb-4"
+          style={{ fontFamily: 'var(--font-bebas)', fontSize: 24, color: '#0D1B4B', letterSpacing: 1 }}
+        >
+          📸 COMO DEVE SER A FOTO?
+        </div>
+
+        {/* Foto exemplo */}
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ position: 'relative', width: 100 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/crianca_modelo.jpg"
+                alt="Exemplo de foto ideal"
+                style={{
+                  width: 100,
+                  borderRadius: 14,
+                  boxShadow: '0 4px 18px rgba(0,155,58,0.25)',
+                  border: '3px solid #009B3A',
+                  display: 'block',
+                }}
+              />
+              <div style={{
+                position: 'absolute', bottom: -8, left: '50%', transform: 'translateX(-50%)',
+                background: '#009B3A', color: '#fff', borderRadius: 20,
+                fontFamily: 'var(--font-barlow)', fontWeight: 800, fontSize: 11,
+                padding: '3px 10px', whiteSpace: 'nowrap',
+              }}>
+                ✅ ASSIM!
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1 }}>
+            {TIPS.map((tip, i) => (
+              <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 7 }}>
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{tip.ok ? '✅' : '❌'}</span>
+                <span style={{
+                  fontFamily: 'var(--font-barlow)', fontSize: 12.5, fontWeight: 600,
+                  color: tip.ok ? '#0D1B4B' : 'rgba(13,27,75,0.45)',
+                  lineHeight: 1.4,
+                }}>
+                  {tip.text}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div
-          className="text-center mb-2"
-          style={{ fontFamily: 'var(--font-bebas)', fontSize: 26, color: '#0D1B4B', letterSpacing: 1 }}
-        >
-          ⚠️ AVISO IMPORTANTE
-        </div>
-
-        <p className="text-center mb-5" style={{ fontFamily: 'var(--font-barlow)', fontSize: 15, color: '#0D1B4B', lineHeight: 1.6 }}>
-          A foto precisa ser <strong>somente do rosto da pessoa</strong>, sem outras pessoas no enquadramento.
-          <br />
-          <span style={{ color: 'rgba(13,27,75,0.6)', fontSize: 13, fontWeight: 500 }}>
-            Certifique-se que o rosto está bem visível e bem iluminado para melhor resultado.
-          </span>
+        <p style={{
+          fontFamily: 'var(--font-barlow)', fontSize: 12, color: 'rgba(13,27,75,0.5)',
+          fontWeight: 600, textAlign: 'center', marginBottom: 16, lineHeight: 1.5,
+        }}>
+          Uma boa foto garante o melhor resultado da IA 🤖
         </p>
 
         <div className="flex flex-col gap-3">
