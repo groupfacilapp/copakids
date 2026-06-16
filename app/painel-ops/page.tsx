@@ -15,6 +15,7 @@ interface Order {
   download_token: string
   job_id: string | null
   utm_params: Record<string, string> | null
+  followup_sent_at: string | null
 }
 
 interface Metrics {
@@ -390,13 +391,19 @@ export default function AdminPage() {
                 )}
                 {/* Follow-up (pendentes que geraram) */}
                 {!order.paid && order.job_id && order.email && (
-                  <button onClick={() => sendFollowup(order)} disabled={following === order.id}
-                    title={`Enviar follow-up para ${order.email}`}
-                    style={{ padding: '6px 12px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: following === order.id ? 'wait' : 'pointer',
-                      background: followMsg[order.id]?.startsWith('✅') ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.15)',
-                      color: followMsg[order.id]?.startsWith('✅') ? '#4ade80' : '#fbbf24' }}>
-                    {following === order.id ? '...' : followMsg[order.id] || '📩'}
-                  </button>
+                  order.followup_sent_at || followMsg[order.id]?.startsWith('✅') ? (
+                    <span style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                      background: 'rgba(74,222,128,0.12)', color: '#4ade80' }}>
+                      ✅ Enviado
+                    </span>
+                  ) : (
+                    <button onClick={() => sendFollowup(order)} disabled={following === order.id}
+                      title={`Enviar follow-up para ${order.email}`}
+                      style={{ padding: '6px 12px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: following === order.id ? 'wait' : 'pointer',
+                        background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>
+                      {following === order.id ? '...' : '📩'}
+                    </button>
+                  )
                 )}
               </div>
             </div>

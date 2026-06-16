@@ -35,6 +35,8 @@ export async function POST(req: NextRequest) {
   const previewUrl    = `${BASE_URL}/api/og/${order.download_token}`
   const checkoutUrl   = `${CHECKOUT_BASE}?job_id=${order.job_id}&utm_source=followup&utm_medium=email`
 
+  await sb.from('orders').update({ followup_sent_at: new Date().toISOString() }).eq('id', order_id)
+
   await getResend().emails.send({
     from: 'Convoca Kids <contato@convocakids.com>',
     to: order.email as string,
