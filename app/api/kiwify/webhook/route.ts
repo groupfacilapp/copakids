@@ -71,7 +71,8 @@ function validateSecret(req: NextRequest, bodyToken?: string): boolean {
 }
 
 function extractOrderBumpProductIds(payload: KiwifyPayload): string[] {
-  const orderData = payload.order ?? payload.data?.order
+  const orderData: (KiwifyOrderData & { id?: string; status?: string }) | undefined =
+    payload.order ?? (payload.data?.order as KiwifyOrderData | undefined)
   if (!orderData) return []
 
   const ids: string[] = []
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Kiwify real envia tudo sob body.order; formatos legados são flat
-  const od = body.order ?? body
+  const od: KiwifyOrderData = body.order ?? (body as unknown as KiwifyOrderData)
 
   const event       = od.webhook_event_type ?? body.event ?? 'order_approved'
   const orderId     = od.order_id    ?? body.data?.order?.id     ?? ''
