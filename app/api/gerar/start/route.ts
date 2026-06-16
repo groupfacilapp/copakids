@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI, { toFile } from 'openai'
 import { rateLimit } from '@/lib/rateLimit'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { siteConfig } from '@/lib/siteConfig'
 import { randomBytes } from 'crypto'
 import fs from 'fs'
 import path from 'path'
@@ -9,13 +10,6 @@ import path from 'path'
 export const maxDuration = 300
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
-
-const PROMPT =
-  'The first image is Neymar wearing the Brazil national team jersey. ' +
-  'The second image is a different person. ' +
-  'Replace Neymar with the person from the second image. ' +
-  'Keep everything else exactly the same: jersey, pose, framing, lighting and background. ' +
-  'Preserve the exact face, skin tone, hair and age from the second image.'
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,14 +38,14 @@ export async function POST(req: NextRequest) {
     }
     const mimeType = isJpeg ? 'image/jpeg' : isPng ? 'image/png' : 'image/webp'
 
-    const jerseyPath = path.join(process.cwd(), 'public', 'assets', 'jersey_reference.png')
+    const jerseyPath = path.join(process.cwd(), 'public', 'assets', siteConfig.referenceImageFile)
     const jerseyFile = await toFile(fs.readFileSync(jerseyPath), 'jersey.png', { type: 'image/png' })
     const personFile = await toFile(photoBuffer, 'person.png', { type: mimeType })
 
     const response = await openai.images.edit({
       model: 'gpt-image-2',
       image: [jerseyFile, personFile],
-      prompt: PROMPT,
+      prompt: siteConfig.aiPrompt,
       n: 1,
       size: '1024x1024',
     })

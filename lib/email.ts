@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
+import { siteConfig } from '@/lib/siteConfig'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.convocakids.com'
+const BASE_URL = siteConfig.baseUrl
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
@@ -21,7 +22,7 @@ export async function sendDownloadEmail(opts: {
     : ''
 
   await getResend().emails.send({
-    from: 'Convoca Kids <contato@convocakids.com>',
+    from: siteConfig.emailFrom,
     to: opts.to,
     subject: '🎽 Sua figurinha da Copa 2026 está pronta para download!',
     html: `<!DOCTYPE html>

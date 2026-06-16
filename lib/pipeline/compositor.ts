@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 import * as path from 'path'
 import * as fs from 'fs'
+import { siteConfig } from '@/lib/siteConfig'
 
 // Dynamic import so a native-module load failure is caught inside the async function
 // (static import would crash the Lambda before any try-catch can act)
@@ -172,7 +173,8 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
   ctx.fillText(clubeUpper, p2cx, clubY)
 
   if (data.watermark) {
-    const LABEL = 'CONVOCA KIDS  •  CONVOCA KIDS'
+    const wm    = siteConfig.watermarkText
+    const LABEL = `${wm}  •  ${wm}`
     const FONT  = 'bold 48px sans-serif'
 
     // Diagonal ↗ — texto branco + sombra escura (irremovível em fundos claros E escuros)

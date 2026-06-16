@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { checkAdminAuth } from '@/lib/adminAuth'
+import { siteConfig } from '@/lib/siteConfig'
 import { Resend } from 'resend'
 
-const BASE_URL      = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.convocakids.com'
-const CHECKOUT_BASE = 'https://pay.kiwify.com.br/yRmTtd1'
+const BASE_URL      = siteConfig.baseUrl
+const CHECKOUT_BASE = siteConfig.checkoutUrl
 
 function getResend() {
   const key = process.env.RESEND_API_KEY
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   await sb.from('orders').update({ followup_sent_at: new Date().toISOString() }).eq('id', order_id)
 
   await getResend().emails.send({
-    from: 'Convoca Kids <contato@convocakids.com>',
+    from: siteConfig.emailFrom,
     to: order.email as string,
     subject: `⚽ ${primeiroNome}, sua figurinha da Copa 2026 está esperando você!`,
     html: `<!DOCTYPE html>

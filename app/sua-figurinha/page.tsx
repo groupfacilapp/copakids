@@ -9,7 +9,9 @@ import { Testimonials } from '@/components/Testimonials'
 import { readUTM, appendUTMToUrl } from '@/lib/utm'
 import { pixelEvent } from '@/lib/pixel'
 
-const CHECKOUT_BASE = 'https://pay.kiwify.com.br/yRmTtd1'
+const CHECKOUT_BASE = process.env.NEXT_PUBLIC_CHECKOUT_URL ?? 'https://pay.kiwify.com.br/yRmTtd1'
+const PRICE         = process.env.NEXT_PUBLIC_PRICE         ?? '19,90'
+const PRICE_ORIG    = process.env.NEXT_PUBLIC_PRICE_ORIGINAL ?? '39,90'
 
 const TRUST_ITEMS = [
   { icon: '⚡', text: 'ACESSO LIBERADO NA HORA' },
@@ -304,7 +306,7 @@ export default function SuaFigurinhaPage() {
                     textDecoration: 'line-through',
                   }}
                 >
-                  De R$ 39,90
+                  De R$ {PRICE_ORIG}
                 </div>
 
                 {/* Real price */}
@@ -318,7 +320,7 @@ export default function SuaFigurinhaPage() {
                     marginBottom: 2,
                   }}
                 >
-                  R$ 19,90
+                  R$ {PRICE}
                 </div>
 
                 <div
@@ -468,7 +470,7 @@ export default function SuaFigurinhaPage() {
                 onClick={handleCheckout}
                 style={{ fontSize: 19 }}
               >
-                QUERO MINHA FIGURINHA — R$ 19,90 ⚽
+                QUERO MINHA FIGURINHA — R$ {PRICE} ⚽
               </button>
 
               <p
