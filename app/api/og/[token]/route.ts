@@ -33,8 +33,8 @@ export async function GET(
     return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
   }
 
-  // Usa sticker em cache se disponível
-  if (order.sticker_path) {
+  // Cache só serve para pagos (versão sem watermark)
+  if (order.paid && order.sticker_path) {
     const { data: blob } = await sb.storage.from('stickers').download(order.sticker_path)
     if (blob) {
       const buf = Buffer.from(await blob.arrayBuffer())
@@ -62,17 +62,19 @@ export async function GET(
     altura: d.altura     ?? '',
     peso:   d.peso       ?? '',
     clube:  d.clube      ?? '',
-    watermark: false,
+    watermark: !order.paid,
   })
 
-  // Salva em cache async
-  void (async () => {
-    try {
-      const stickerPath = `stickers/${token}.png`
-      await sb.storage.from('stickers').upload(stickerPath, stickerPng, { contentType: 'image/png', upsert: true })
-      await sb.from('orders').update({ sticker_path: stickerPath } as Partial<OrderRow>).eq('download_token', token)
-    } catch { /* silencia erro de cache */ }
-  })()
+  // Salva em cache apenas para pagos (não pagos sempre geram com watermark)
+  if (order.paid) {
+    void (async () => {
+      try {
+        const stickerPath = `stickers/${token}.png`
+        await sb.storage.from('stickers').upload(stickerPath, stickerPng, { contentType: 'image/png', upsert: true })
+        await sb.from('orders').update({ sticker_path: stickerPath } as Partial<OrderRow>).eq('download_token', token)
+      } catch { /* silencia erro de cache */ }
+    })()
+  }
 
   return new NextResponse(new Uint8Array(stickerPng), {
     headers: {
