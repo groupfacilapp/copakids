@@ -79,7 +79,7 @@ export async function GET(
   return new NextResponse(new Uint8Array(stickerPng), {
     headers: {
       'Content-Type': 'image/png',
-      'Cache-Control': 'public, max-age=86400',
+      'Cache-Control': order.paid ? 'public, max-age=86400' : 'no-store',
     },
   })
 }
