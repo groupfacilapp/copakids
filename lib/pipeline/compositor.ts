@@ -172,23 +172,35 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
   ctx.fillText(clubeUpper, p2cx, clubY)
 
   if (data.watermark) {
-    // Camada escura semi-transparente para degradar a imagem
     ctx.save()
-    ctx.globalAlpha = 0.38
+    ctx.globalAlpha = 0.22
     ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, W, H)
     ctx.restore()
 
-    // Texto diagonal denso e legível
+    // Diagonal principal (↗)
     ctx.save()
-    ctx.globalAlpha = 0.72
+    ctx.globalAlpha = 0.50
     ctx.fillStyle   = '#ffffff'
-    ctx.font        = 'bold 58px sans-serif'
+    ctx.font        = 'bold 52px sans-serif'
     ctx.textAlign   = 'center'
     ctx.translate(W / 2, H / 2)
     ctx.rotate(-Math.PI / 5)
-    for (let y = -700; y < 700; y += 110) {
-      ctx.fillText('PRÉVIA  •  PRÉVIA  •  PRÉVIA', 0, y)
+    for (let y = -700; y < 700; y += 120) {
+      ctx.fillText('CONVOCA KIDS  •  CONVOCA KIDS', 0, y)
+    }
+    ctx.restore()
+
+    // Diagonal oposta (↙)
+    ctx.save()
+    ctx.globalAlpha = 0.50
+    ctx.fillStyle   = '#ffffff'
+    ctx.font        = 'bold 52px sans-serif'
+    ctx.textAlign   = 'center'
+    ctx.translate(W / 2, H / 2)
+    ctx.rotate(Math.PI / 5)
+    for (let y = -700; y < 700; y += 120) {
+      ctx.fillText('CONVOCA KIDS  •  CONVOCA KIDS', 0, y)
     }
     ctx.restore()
   }

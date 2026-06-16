@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'anon'
-  if (!(await rateLimit(`og:${ip}`, 60, 3600))) {
+  if (!(await rateLimit(`og:${ip}`, 300, 3600))) {
     return NextResponse.json({ error: 'Muitas tentativas' }, { status: 429 })
   }
 
