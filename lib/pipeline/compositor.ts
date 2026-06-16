@@ -172,35 +172,38 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
   ctx.fillText(clubeUpper, p2cx, clubY)
 
   if (data.watermark) {
-    ctx.save()
-    ctx.globalAlpha = 0.12
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, W, H)
-    ctx.restore()
+    const LABEL = 'CONVOCA KIDS  •  CONVOCA KIDS'
+    const FONT  = 'bold 48px sans-serif'
 
-    // Diagonal principal (↗)
+    // Diagonal ↗ — texto branco + sombra escura (irremovível em fundos claros E escuros)
     ctx.save()
-    ctx.globalAlpha = 0.32
-    ctx.fillStyle   = '#ffffff'
-    ctx.font        = 'bold 48px sans-serif'
-    ctx.textAlign   = 'center'
+    ctx.font      = FONT
+    ctx.textAlign = 'center'
     ctx.translate(W / 2, H / 2)
     ctx.rotate(-Math.PI / 5)
     for (let y = -700; y < 700; y += 130) {
-      ctx.fillText('CONVOCA KIDS  •  CONVOCA KIDS', 0, y)
+      ctx.globalAlpha = 0.18
+      ctx.fillStyle   = '#000000'
+      ctx.fillText(LABEL, 3, y + 3)   // sombra deslocada
+      ctx.globalAlpha = 0.28
+      ctx.fillStyle   = '#ffffff'
+      ctx.fillText(LABEL, 0, y)
     }
     ctx.restore()
 
-    // Diagonal oposta (↙)
+    // Diagonal ↙ — idem
     ctx.save()
-    ctx.globalAlpha = 0.32
-    ctx.fillStyle   = '#ffffff'
-    ctx.font        = 'bold 48px sans-serif'
-    ctx.textAlign   = 'center'
+    ctx.font      = FONT
+    ctx.textAlign = 'center'
     ctx.translate(W / 2, H / 2)
     ctx.rotate(Math.PI / 5)
     for (let y = -700; y < 700; y += 130) {
-      ctx.fillText('CONVOCA KIDS  •  CONVOCA KIDS', 0, y)
+      ctx.globalAlpha = 0.18
+      ctx.fillStyle   = '#000000'
+      ctx.fillText(LABEL, 3, y + 3)
+      ctx.globalAlpha = 0.28
+      ctx.fillStyle   = '#ffffff'
+      ctx.fillText(LABEL, 0, y)
     }
     ctx.restore()
   }

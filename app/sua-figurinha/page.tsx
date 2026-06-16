@@ -220,18 +220,31 @@ export default function SuaFigurinhaPage() {
                 </div>
               </div>
 
-              {/* Preview note */}
-              <p
-                className="text-center mb-6"
+              {/* Bloco de instrução pós-preview */}
+              <div
+                className="rounded-2xl mb-5"
                 style={{
-                  fontFamily: 'var(--font-barlow)',
-                  fontSize: 12,
-                  color: 'rgba(13,27,75,0.4)',
-                  fontWeight: 500,
+                  background: 'rgba(13,27,75,0.06)',
+                  border: '1.5px solid rgba(13,27,75,0.12)',
+                  padding: '16px 18px',
                 }}
               >
-                🔒 A versão sem marca d'água é liberada após o pagamento
-              </p>
+                <p style={{ fontFamily: 'var(--font-bebas)', fontSize: 16, color: '#009B3A', letterSpacing: 1, marginBottom: 10, textAlign: 'center' }}>
+                  ✅ COMO RECEBER SEM MARCA D'ÁGUA:
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    ['1.', 'Clique no botão abaixo e finalize o pagamento'],
+                    ['2.', 'Receba o link de download no seu e-mail na hora'],
+                    ['3.', 'Baixe em 4K sem marca d\'água — pronta para imprimir e colar'],
+                  ].map(([num, txt]) => (
+                    <div key={num} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <span style={{ fontFamily: 'var(--font-bebas)', fontSize: 15, color: '#009B3A', minWidth: 18 }}>{num}</span>
+                      <span style={{ fontFamily: 'var(--font-barlow)', fontSize: 13, fontWeight: 600, color: 'rgba(13,27,75,0.7)', lineHeight: 1.4 }}>{txt}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* ── PRICE ── */}
               <div className="card-glass p-5 mb-4 text-center">
