@@ -75,16 +75,44 @@ export async function POST(req: NextRequest) {
             </p>
 
             <!-- PREVIEW DA FIGURINHA -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
               <tr>
                 <td align="center">
-                  <div style="position:relative;display:inline-block;">
+                  <div style="display:inline-block;">
                     <img src="${previewUrl}" alt="Prévia da sua figurinha" width="180"
-                      style="border-radius:12px;display:block;border:3px solid rgba(255,213,0,0.3);opacity:0.75;" />
-                    <div style="background:rgba(0,0,0,0.65);color:#FFD500;font-weight:900;font-size:12px;letter-spacing:2px;padding:6px 0;text-align:center;margin-top:-1px;border-radius:0 0 10px 10px;">
-                      🔒 PRÉVIA — SEM MARCA D'ÁGUA APÓS COMPRA
+                      style="border-radius:12px;display:block;border:3px solid rgba(255,213,0,0.3);" />
+                    <div style="background:rgba(0,0,0,0.70);color:#FFD500;font-weight:900;font-size:11px;letter-spacing:2px;padding:6px 0;text-align:center;border-radius:0 0 10px 10px;">
+                      🔒 PRÉVIA COM MARCA D'ÁGUA
                     </div>
                   </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- EXPLICAÇÃO PÓS-PREVIEW -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,213,0,0.07);border:1px solid rgba(255,213,0,0.2);border-radius:14px;margin-bottom:20px;">
+              <tr>
+                <td style="padding:16px 20px;">
+                  <p style="margin:0 0 10px;color:#FFD500;font-size:14px;font-weight:900;text-align:center;letter-spacing:1px;">
+                    ✅ Como receber a versão completa:
+                  </p>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:4px 0;color:rgba(255,255,255,0.8);font-size:13px;">
+                        <span style="color:#FFD500;font-weight:700;">1.</span> Clique no botão abaixo e finalize o pagamento
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:4px 0;color:rgba(255,255,255,0.8);font-size:13px;">
+                        <span style="color:#FFD500;font-weight:700;">2.</span> Receba o link de download <strong style="color:#fff;">no seu email</strong> na hora
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:4px 0;color:rgba(255,255,255,0.8);font-size:13px;">
+                        <span style="color:#FFD500;font-weight:700;">3.</span> Baixe em <strong style="color:#fff;">4K sem marca d'água</strong> — pronta para imprimir e colar
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -92,8 +120,8 @@ export async function POST(req: NextRequest) {
             <!-- URGÊNCIA -->
             <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,100,0,0.1);border:1px solid rgba(255,100,0,0.25);border-radius:12px;margin-bottom:24px;">
               <tr>
-                <td style="padding:14px 18px;color:rgba(255,180,100,0.9);font-size:13px;font-weight:600;text-align:center;">
-                  ⏰ Figurinhas em alta demanda — garanta a sua agora por apenas <strong style="color:#FFD500;">R$ 19,90</strong>
+                <td style="padding:12px 18px;color:rgba(255,180,100,0.9);font-size:13px;font-weight:600;text-align:center;">
+                  ⏰ Apenas <strong style="color:#FFD500;">R$ 19,90</strong> · Acesso imediato · Arquivo digital em alta resolução
                 </td>
               </tr>
             </table>
@@ -104,14 +132,14 @@ export async function POST(req: NextRequest) {
                 <td align="center">
                   <a href="${checkoutUrl}"
                      style="display:inline-block;background:linear-gradient(135deg,#FFD500,#ff9f00);color:#000;font-weight:900;font-size:15px;text-decoration:none;padding:18px 44px;border-radius:50px;letter-spacing:1.5px;text-transform:uppercase;box-shadow:0 8px 24px rgba(255,213,0,0.35);">
-                    ⚽ GARANTIR MINHA FIGURINHA
+                    ⚽ QUERO MINHA FIGURINHA EM 4K
                   </a>
                 </td>
               </tr>
             </table>
 
             <p style="margin:0;color:rgba(255,255,255,0.25);font-size:11px;text-align:center;line-height:1.6;">
-              Arquivo digital em alta resolução · Estilo Panini oficial · Acesso imediato após pagamento
+              Estilo Panini oficial · Sem marca d'água · Pronto para imprimir e colar no álbum
             </p>
           </td>
         </tr>

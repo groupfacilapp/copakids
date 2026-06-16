@@ -173,33 +173,33 @@ export async function compositeSticker(personPng: Buffer, data: UserData): Promi
 
   if (data.watermark) {
     ctx.save()
-    ctx.globalAlpha = 0.22
+    ctx.globalAlpha = 0.12
     ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, W, H)
     ctx.restore()
 
     // Diagonal principal (↗)
     ctx.save()
-    ctx.globalAlpha = 0.50
+    ctx.globalAlpha = 0.32
     ctx.fillStyle   = '#ffffff'
-    ctx.font        = 'bold 52px sans-serif'
+    ctx.font        = 'bold 48px sans-serif'
     ctx.textAlign   = 'center'
     ctx.translate(W / 2, H / 2)
     ctx.rotate(-Math.PI / 5)
-    for (let y = -700; y < 700; y += 120) {
+    for (let y = -700; y < 700; y += 130) {
       ctx.fillText('CONVOCA KIDS  •  CONVOCA KIDS', 0, y)
     }
     ctx.restore()
 
     // Diagonal oposta (↙)
     ctx.save()
-    ctx.globalAlpha = 0.50
+    ctx.globalAlpha = 0.32
     ctx.fillStyle   = '#ffffff'
-    ctx.font        = 'bold 52px sans-serif'
+    ctx.font        = 'bold 48px sans-serif'
     ctx.textAlign   = 'center'
     ctx.translate(W / 2, H / 2)
     ctx.rotate(Math.PI / 5)
-    for (let y = -700; y < 700; y += 120) {
+    for (let y = -700; y < 700; y += 130) {
       ctx.fillText('CONVOCA KIDS  •  CONVOCA KIDS', 0, y)
     }
     ctx.restore()
