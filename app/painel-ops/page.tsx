@@ -91,7 +91,11 @@ export default function AdminPage() {
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/admin/jobs', { headers: { 'x-admin-secret': sec } })
-      if (!res.ok) { setError('Senha incorreta'); return }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error ?? 'Senha incorreta')
+        return
+      }
       const data = await res.json()
       setOrders(data.orders)
       setMetrics(data.metrics)
