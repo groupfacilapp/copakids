@@ -72,8 +72,9 @@ export default function AreaPage() {
   const handleShare = useCallback(async (order: OrderCard) => {
     setSharing(order.download_token)
     const nome = order.nome ?? 'Figurinha'
-    const ogUrl = `${BASE_URL}/api/og/${order.download_token}`
-    const siteUrl = `${BASE_URL}/?utm_source=whatsapp&utm_medium=convite&utm_campaign=copa2026`
+    const origin = typeof window !== 'undefined' ? window.location.origin : BASE_URL
+    const ogUrl = `${origin}/api/og/${order.download_token}`
+    const siteUrl = `${origin}/?utm_source=whatsapp&utm_medium=convite&utm_campaign=copa2026`
     const shareText = `Olha minha figurinha da Copa 2026! ⚽🏆\n${ogUrl}\n\nCria a tua também: ${siteUrl}`
 
     try {
