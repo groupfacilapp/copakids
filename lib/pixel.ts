@@ -1,4 +1,4 @@
-export const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? '981612607487259'
+export const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? '805014786021728'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
