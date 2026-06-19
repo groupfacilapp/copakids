@@ -45,7 +45,7 @@ export async function sendWhatsAppMessage({ phone, message }: SendMessageOptions
     if (provider.toLowerCase() === 'z-api') {
       // Z-API Endpoint: URL/instances/INSTANCIA/token/TOKEN/send-text
       const baseUrl = apiUrl || 'https://api.z-api.io'
-      url = `${baseUrl.replace(/\/$/, '')}/instances/${instance}/token/${token}/send-text`
+      url = `${baseUrl.replace(/\/$/, '')}/instances/${encodeURIComponent(instance)}/token/${token}/send-text`
       body = {
         phone: cleanPhone,
         message: message,
@@ -54,7 +54,9 @@ export async function sendWhatsAppMessage({ phone, message }: SendMessageOptions
       // Evolution API Endpoint: URL/message/sendText/INSTANCIA
       const baseUrl = apiUrl
       if (!baseUrl) throw new Error('Evolution API requer WHATSAPP_API_URL configurada')
-      url = `${baseUrl.replace(/\/$/, '')}/message/sendText/${instance}`
+      // Remove '/manager' ou '/manager/' se o usuário colocar por engano
+      const cleanedBaseUrl = baseUrl.replace(/\/manager\/?$/, '').replace(/\/$/, '')
+      url = `${cleanedBaseUrl}/message/sendText/${encodeURIComponent(instance)}`
       headers['apikey'] = token
       body = {
         number: cleanPhone,
