@@ -262,14 +262,17 @@ export async function POST(req: NextRequest) {
     const waLink = `${siteConfig.baseUrl}/area/${order.download_token}`
     const waMessage = `Olá, *${waName}*! 🎉\n\nSua figurinha personalizada da Copa 2026 está pronta!\n\nVocê pode visualizar e baixar a sua figurinha em alta resolução no link abaixo:\n👉 ${waLink}\n\nObrigado pela compra! ⚽🏆`
 
-    void sendWhatsAppMessage({
-      phone: buyerPhone,
-      message: waMessage,
-    }).then(res => {
+    try {
+      const res = await sendWhatsAppMessage({
+        phone: buyerPhone,
+        message: waMessage,
+      })
       if (!res.success) {
         console.error('[kiwify/webhook] erro ao disparar WhatsApp:', res.error)
       }
-    })
+    } catch (waErr) {
+      console.error('[kiwify/webhook] falha crítica ao disparar WhatsApp:', waErr)
+    }
   }
 
   // Meta Conversions API — Purchase server-side (não afeta fluxo principal)
