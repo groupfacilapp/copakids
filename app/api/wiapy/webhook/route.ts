@@ -187,12 +187,17 @@ export async function POST(req: NextRequest) {
             .update({ order_bump_products: nextBumps } as Partial<OrderRow>)
             .eq('id', paidOrder.id)
           console.log('[wiapy/webhook] order bump adicionado:', bumpProductIds, '→ order', paidOrder.id)
+          const host = req.headers.get('host') ?? 'copakids-ashen.vercel.app'
+          const protocol = req.headers.get('x-forwarded-proto') ?? 'https'
+          const dynamicBaseUrl = `${protocol}://${host}`
+
           try {
             await sendDownloadEmail({
               to: buyerEmail,
               nome: paidOrder.nome ?? buyerName ?? 'Torcedor(a)',
               token: paidOrder.download_token,
               hasPdf: true,
+              baseUrl: dynamicBaseUrl,
             })
           } catch (emailErr) {
             console.error('[wiapy/webhook] email bump error:', emailErr)
@@ -225,12 +230,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'DB update error' }, { status: 500 })
   }
 
+  const host = req.headers.get('host') ?? 'copakids-ashen.vercel.app'
+  const protocol = req.headers.get('x-forwarded-proto') ?? 'https'
+  const dynamicBaseUrl = `${protocol}://${host}`
+
   try {
     await sendDownloadEmail({
       to: buyerEmail,
       nome: order.nome ?? buyerName ?? 'Torcedor(a)',
       token: order.download_token,
       hasPdf: orderBumpProductIds.length > 0,
+      baseUrl: dynamicBaseUrl,
     })
   } catch (emailErr) {
     console.error('[wiapy/webhook] email error:', emailErr)
@@ -239,7 +249,7 @@ export async function POST(req: NextRequest) {
   // Dispara o WhatsApp automático se houver telefone
   if (buyerPhone) {
     const waName = order.nome ?? buyerName ?? 'Torcedor(a)'
-    const waLink = `${siteConfig.baseUrl}/area/${order.download_token}`
+    const waLink = `${dynamicBaseUrl}/area/${order.download_token}`
     const waMessage = `Olá, *${waName}*! 🎉\n\nSua figurinha personalizada da Copa 2026 está pronta!\n\nVocê pode visualizar e baixar a sua figurinha em alta resolução no link abaixo:\n👉 ${waLink}\n\nObrigado pela compra! ⚽🏆`
 
     try {

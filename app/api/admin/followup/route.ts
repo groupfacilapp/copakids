@@ -32,8 +32,12 @@ export async function POST(req: NextRequest) {
   if (!order.email)     return NextResponse.json({ error: 'sem email' }, { status: 422 })
   if (!order.job_id)    return NextResponse.json({ error: 'figurinha não gerada' }, { status: 422 })
 
+  const host = req.headers.get('host') ?? 'copakids-ashen.vercel.app'
+  const protocol = req.headers.get('x-forwarded-proto') ?? 'https'
+  const dynamicBaseUrl = `${protocol}://${host}`
+
   const primeiroNome  = (order.nome as string ?? 'Torcedor(a)').split(' ')[0]
-  const previewUrl    = `${BASE_URL}/api/og/${order.download_token}`
+  const previewUrl    = `${dynamicBaseUrl}/api/og/${order.download_token}`
   const checkoutUrl   = `${CHECKOUT_BASE}?job_id=${order.job_id}&utm_source=followup&utm_medium=email`
 
   await sb.from('orders').update({ followup_sent_at: new Date().toISOString() }).eq('id', order_id)

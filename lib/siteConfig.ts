@@ -9,7 +9,7 @@
 export const siteConfig = {
   // ── Identidade do projeto ────────────────────────────────────────────────
   projectName:    process.env.NEXT_PUBLIC_PROJECT_NAME    ?? 'Convoca Kids',
-  baseUrl:        process.env.NEXT_PUBLIC_BASE_URL        ?? 'https://www.convocakids.com',
+  baseUrl:        (process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.convocakids.com').replace(/\/$/, ''),
   emailFrom:      process.env.EMAIL_FROM                  ?? 'Convoca Kids <contato@convocakids.com>',
 
   // ── Checkout / preço ────────────────────────────────────────────────────

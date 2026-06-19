@@ -24,8 +24,12 @@ export async function POST(req: NextRequest) {
   const targetPhone = phone || order.phone
   if (!targetPhone) return NextResponse.json({ error: 'phone number missing' }, { status: 422 })
 
+  const host = req.headers.get('host') ?? 'copakids-ashen.vercel.app'
+  const protocol = req.headers.get('x-forwarded-proto') ?? 'https'
+  const dynamicBaseUrl = `${protocol}://${host}`
+
   const waName = order.nome ?? 'Torcedor(a)'
-  const waLink = `${siteConfig.baseUrl}/area/${order.download_token}`
+  const waLink = `${dynamicBaseUrl}/area/${order.download_token}`
   const waMessage = `Olá, *${waName}*! 🎉\n\nSua figurinha personalizada da Copa 2026 está pronta!\n\nVocê pode visualizar e baixar a sua figurinha em alta resolução no link abaixo:\n👉 ${waLink}\n\nObrigado pela compra! ⚽🏆`
 
   const res = await sendWhatsAppMessage({

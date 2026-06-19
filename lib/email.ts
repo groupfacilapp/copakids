@@ -14,8 +14,10 @@ export async function sendDownloadEmail(opts: {
   nome: string
   token: string
   hasPdf?: boolean
+  baseUrl?: string
 }) {
-  const link = `${BASE_URL}/area/${opts.token}`
+  const base = opts.baseUrl ? opts.baseUrl.replace(/\/$/, '') : BASE_URL
+  const link = `${base}/area/${opts.token}`
   const primeiroNome = opts.nome.split(' ')[0]
   const pdfLine = opts.hasPdf
     ? `<tr><td style="padding:6px 0;color:rgba(255,255,255,0.7);font-size:13px;">✅&nbsp; PDF Guia de Impressão incluído</td></tr>`
@@ -110,7 +112,7 @@ export async function sendDownloadEmail(opts: {
           <td style="background:rgba(0,0,0,0.4);padding:18px 32px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
             <p style="margin:0;color:rgba(255,255,255,0.2);font-size:11px;line-height:1.6;">
               Figurinha Copa 2026 &bull; Produto digital exclusivo<br />
-              Dúvidas? Acesse <a href="${BASE_URL}/area" style="color:rgba(255,213,0,0.5);">sua área de acesso</a>
+              Dúvidas? Acesse <a href="${base}/area" style="color:rgba(255,213,0,0.5);">sua área de acesso</a>
             </p>
           </td>
         </tr>
