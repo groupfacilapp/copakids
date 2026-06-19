@@ -595,7 +595,7 @@ export default function CriarPage() {
                     }}
                   >
                     <p style={{ fontSize: 12, color: '#7A5C00', fontWeight: 700, margin: 0, lineHeight: 1.5 }}>
-                      ⚠️ Use o mesmo e-mail na hora do pagamento para receber sua figurinha.
+                      ⚠️ Sua figurinha será enviada automaticamente no seu WhatsApp e no seu E-mail após o pagamento! Use os mesmos dados na hora da compra.
                     </p>
                   </div>
                 </div>

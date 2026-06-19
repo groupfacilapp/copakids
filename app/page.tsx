@@ -46,7 +46,7 @@ const HOW_IT_WORKS = [
   { icon: '📸', title: 'Envie a foto', desc: 'Escolha uma foto do rosto do seu craque — de frente, bem iluminada.' },
   { icon: '✏️', title: 'Preencha os dados', desc: 'Nome, clube, peso, altura e data de nascimento para a ficha técnica.' },
   { icon: '⚡', title: 'Figurinha gerada!', desc: 'Em segundos sua figurinha fica pronta, no estilo oficial Panini Copa.' },
-  { icon: '💾', title: 'Receba o arquivo', desc: 'Arquivo digital em alta resolução, pronto pra imprimir e colecionar.' },
+  { icon: '💾', title: 'Entrega imediata!', desc: 'Arquivo digital em alta resolução enviado na hora no seu WhatsApp e E-mail.' },
 ]
 
 function AnimatedCounter({ target, duration = 1800 }: { target: number; duration?: number }) {
@@ -240,7 +240,7 @@ export default function LandingPage() {
             className="flex items-center justify-center flex-wrap gap-4 mt-6 animate-fade-in-up"
             style={{ animationDelay: '400ms' }}
           >
-            {['✅ Arquivo digital', '📲 Acesso na hora', '🔒 Pagamento seguro'].map((item) => (
+            {['✅ Arquivo digital', '📲 Receba no WhatsApp e E-mail', '🔒 Pagamento seguro'].map((item) => (
               <span key={item} className="trust-item">{item}</span>
             ))}
           </div>

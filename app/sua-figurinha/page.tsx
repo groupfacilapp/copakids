@@ -15,7 +15,7 @@ const PRICE_ORIG    = process.env.NEXT_PUBLIC_PRICE_ORIGINAL ?? '39,90'
 
 const TRUST_ITEMS = [
   { icon: '⚡', text: 'ACESSO LIBERADO NA HORA' },
-  { icon: '📧', text: 'RECEBA POR E-MAIL' },
+  { icon: '📲', text: 'NO WHATSAPP E E-MAIL' },
   { icon: '🖨️', text: 'ARQUIVO PARA IMPRESSÃO' },
   { icon: '🔒', text: 'PAGAMENTO 100% SEGURO' },
 ]
@@ -269,7 +269,7 @@ export default function SuaFigurinhaPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[
                     ['1.', 'Clique no botão abaixo e finalize o pagamento'],
-                    ['2.', 'Receba o link de download no seu e-mail na hora'],
+                    ['2.', 'Receba o link de download no seu WhatsApp e E-mail na hora'],
                     ['3.', 'Baixe em 4K sem marca d\'água — pronta para imprimir e colar'],
                   ].map(([num, txt]) => (
                     <div key={num} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
