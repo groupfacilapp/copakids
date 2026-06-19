@@ -33,11 +33,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  const host = req.headers.get('host') ?? 'copakids-ashen.vercel.app'
+  const protocol = req.headers.get('x-forwarded-proto') ?? 'https'
+  const dynamicBaseUrl = `${protocol}://${host}`
+
   try {
     await sendDownloadEmail({
       to: email.toLowerCase().trim(),
       nome: order.nome ?? 'Torcedor(a)',
       token: order.download_token,
+      baseUrl: dynamicBaseUrl,
     })
   } catch (err) {
     console.error('[area/resend-link]', err)

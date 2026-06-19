@@ -21,11 +21,16 @@ export async function POST(req: NextRequest) {
   if (!order.paid) return NextResponse.json({ error: 'order not paid' }, { status: 422 })
   if (!order.email) return NextResponse.json({ error: 'email missing' }, { status: 422 })
 
+  const host = req.headers.get('host') ?? 'copakids-ashen.vercel.app'
+  const protocol = req.headers.get('x-forwarded-proto') ?? 'https'
+  const dynamicBaseUrl = `${protocol}://${host}`
+
   await sendDownloadEmail({
     to: order.email,
     nome: order.nome ?? 'Torcedor(a)',
     token: order.download_token,
     hasPdf: (order.order_bump_products ?? []).length > 0,
+    baseUrl: dynamicBaseUrl,
   })
 
   return NextResponse.json({ sent: true })
