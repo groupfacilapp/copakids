@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   const { data: orders, error } = await sb
     .from('orders')
-    .select('id, email, nome, paid, paid_at, created_at, sticker_path, dados_figurinha, order_bump_products, download_token, job_id, utm_params, followup_sent_at')
+    .select('id, email, phone, nome, paid, paid_at, created_at, sticker_path, dados_figurinha, order_bump_products, download_token, job_id, utm_params, followup_sent_at')
     .order('created_at', { ascending: false })
     .limit(300)
 

@@ -5,6 +5,7 @@ import React, { useState, useCallback } from 'react'
 interface Order {
   id: string
   email: string | null
+  phone: string | null
   nome: string | null
   paid: boolean
   paid_at: string | null
@@ -83,6 +84,8 @@ export default function AdminPage() {
   const [previewOrder, setPreviewOrder] = useState<Order | null>(null)
   const [resending, setResending] = useState<string | null>(null)
   const [resendMsg, setResendMsg] = useState<Record<string, string>>({})
+  const [waResending, setWaResending] = useState<string | null>(null)
+  const [waResendMsg, setWaResendMsg] = useState<Record<string, string>>({})
   const [following, setFollowing] = useState<string | null>(null)
   const [followMsg, setFollowMsg] = useState<Record<string, string>>({})
   const [filter, setFilter]   = useState<'all' | 'paid' | 'unpaid'>('all')
@@ -128,6 +131,27 @@ export default function AdminPage() {
       const data = await res.json()
       setResendMsg(p => ({ ...p, [order.id]: res.ok ? '✅ Enviado!' : `⚠ ${data.error ?? 'Erro'}` }))
     } finally { setResending(null) }
+  }, [secret])
+
+  const resendWhatsApp = useCallback(async (order: Order) => {
+    const defaultPhone = order.phone || ''
+    const phone = window.prompt('Confirmar telefone do WhatsApp (somente números com DDD):', defaultPhone)
+    if (phone === null) return
+
+    setWaResending(order.id); setWaResendMsg(p => ({ ...p, [order.id]: '' }))
+    try {
+      const res = await fetch('/api/admin/resend-whatsapp', {
+        method: 'POST',
+        headers: { 'x-admin-secret': secret, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: order.id, phone: phone || undefined }),
+      })
+      const data = await res.json()
+      setWaResendMsg(p => ({ ...p, [order.id]: res.ok ? '✅ Enviado!' : `⚠ ${data.error ?? 'Erro'}` }))
+    } catch {
+      setWaResendMsg(p => ({ ...p, [order.id]: '⚠ Erro' }))
+    } finally {
+      setWaResending(null)
+    }
   }, [secret])
 
   const download = useCallback(async (order: Order) => {
@@ -391,6 +415,16 @@ export default function AdminPage() {
                       background: resendMsg[order.id]?.startsWith('✅') ? 'rgba(74,222,128,0.15)' : 'rgba(96,165,250,0.15)',
                       color: resendMsg[order.id]?.startsWith('✅') ? '#4ade80' : '#60a5fa' }}>
                     {resending === order.id ? '...' : resendMsg[order.id] || '📧'}
+                  </button>
+                )}
+                {/* Reenviar WhatsApp (pagos) */}
+                {order.paid && (
+                  <button onClick={() => resendWhatsApp(order)} disabled={waResending === order.id}
+                    title={order.phone ? `Reenviar WhatsApp para ${order.phone}` : 'Enviar no WhatsApp'}
+                    style={{ padding: '6px 12px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: waResending === order.id ? 'wait' : 'pointer',
+                      background: waResendMsg[order.id]?.startsWith('✅') ? 'rgba(74,222,128,0.15)' : 'rgba(34,197,94,0.15)',
+                      color: waResendMsg[order.id]?.startsWith('✅') ? '#4ade80' : '#22c55e' }}>
+                    {waResending === order.id ? '...' : waResendMsg[order.id] || '💬'}
                   </button>
                 )}
                 {/* Follow-up (pendentes que geraram) */}

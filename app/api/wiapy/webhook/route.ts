@@ -3,6 +3,8 @@ import { getSupabaseAdmin, OrderRow } from '@/lib/supabase'
 import { sendDownloadEmail } from '@/lib/email'
 import { saveLastWebhook } from '@/lib/webhookLog'
 import { sendServerPurchase } from '@/lib/metaConversions'
+import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { siteConfig } from '@/lib/siteConfig'
 
 interface WiapyCustomer {
   id?: string
@@ -232,6 +234,22 @@ export async function POST(req: NextRequest) {
     })
   } catch (emailErr) {
     console.error('[wiapy/webhook] email error:', emailErr)
+  }
+
+  // Dispara o WhatsApp automático se houver telefone
+  if (buyerPhone) {
+    const waName = order.nome ?? buyerName ?? 'Torcedor(a)'
+    const waLink = `${siteConfig.baseUrl}/area/${order.download_token}`
+    const waMessage = `Olá, *${waName}*! 🎉\n\nSua figurinha personalizada da Copa 2026 está pronta!\n\nVocê pode visualizar e baixar a sua figurinha em alta resolução no link abaixo:\n👉 ${waLink}\n\nObrigado pela compra! ⚽🏆`
+
+    void sendWhatsAppMessage({
+      phone: buyerPhone,
+      message: waMessage,
+    }).then(res => {
+      if (!res.success) {
+        console.error('[wiapy/webhook] erro ao disparar WhatsApp:', res.error)
+      }
+    })
   }
 
   // Meta Conversions API — Purchase server-side
