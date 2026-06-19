@@ -426,7 +426,7 @@ export default function LandingPage() {
             Crie a figurinha personalizada do seu filho agora e surpreenda na Copa 2026!
           </p>
           <button className="btn-primary" onClick={() => router.push('/criar')} style={{ fontSize: 20 }}>
-            INICIAR AGORA — É SÓ R$ 19,90 ⚽
+            INICIAR AGORA — É SÓ R$ 12,90 ⚽
           </button>
           <div className="flex items-center justify-center flex-wrap gap-4 mt-5">
             {['✅ Arquivo digital', '📲 Acesso imediato', '🏆 Estilo Panini oficial'].map((item) => (

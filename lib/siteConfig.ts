@@ -14,9 +14,9 @@ export const siteConfig = {
 
   // ── Checkout / preço ────────────────────────────────────────────────────
   checkoutUrl:    process.env.NEXT_PUBLIC_CHECKOUT_URL    ?? 'https://pay.kiwify.com.br/yRmTtd1',
-  price:          process.env.NEXT_PUBLIC_PRICE           ?? '19,90',
-  priceOriginal:  process.env.NEXT_PUBLIC_PRICE_ORIGINAL  ?? '39,90',
-  priceNumber:    parseFloat(process.env.NEXT_PUBLIC_PRICE?.replace(',', '.') ?? '19.90'),
+  price:          process.env.NEXT_PUBLIC_PRICE           ?? '12,90',
+  priceOriginal:  process.env.NEXT_PUBLIC_PRICE_ORIGINAL  ?? '29,90',
+  priceNumber:    parseFloat(process.env.NEXT_PUBLIC_PRICE?.replace(',', '.') ?? '12.90'),
 
   // ── IA — imagem de referência e prompt ──────────────────────────────────
   // jersey_reference.png deve ser substituído pela foto do atleta de referência

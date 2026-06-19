@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
             <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,100,0,0.1);border:1px solid rgba(255,100,0,0.25);border-radius:12px;margin-bottom:24px;">
               <tr>
                 <td style="padding:12px 18px;color:rgba(255,180,100,0.9);font-size:13px;font-weight:600;text-align:center;">
-                  ⏰ Apenas <strong style="color:#FFD500;">R$ 19,90</strong> · Acesso imediato · Arquivo digital em alta resolução
+                  ⏰ Apenas <strong style="color:#FFD500;">R$ 12,90</strong> · Acesso imediato · Arquivo digital em alta resolução
                 </td>
               </tr>
             </table>

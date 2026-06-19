@@ -10,7 +10,7 @@ import { readUTM, appendUTMToUrl } from '@/lib/utm'
 import { pixelEvent } from '@/lib/pixel'
 
 const CHECKOUT_BASE = process.env.NEXT_PUBLIC_CHECKOUT_URL ?? 'https://pay.kiwify.com.br/yRmTtd1'
-const PRICE         = process.env.NEXT_PUBLIC_PRICE         ?? '19,90'
+const PRICE         = process.env.NEXT_PUBLIC_PRICE         ?? '12,90'
 const PRICE_ORIG    = process.env.NEXT_PUBLIC_PRICE_ORIGINAL ?? '39,90'
 
 const TRUST_ITEMS = [
@@ -108,7 +108,7 @@ export default function SuaFigurinhaPage() {
     setTimeout(() => setShowConfetti(false), 4000)
 
     // Pixel: usuário chegou à página da figurinha = ViewContent
-    pixelEvent('ViewContent', { content_name: 'Figurinha Copa 2026', value: 19.90, currency: 'BRL' })
+    pixelEvent('ViewContent', { content_name: 'Figurinha Copa 2026', value: 12.90, currency: 'BRL' })
   }, [store.name, router])
 
   const SHARE_LINK = 'https://www.convocakids.com/?utm_source=whatsapp&utm_medium=referral&utm_campaign=indicacao'
@@ -130,7 +130,7 @@ export default function SuaFigurinhaPage() {
   }, [])
 
   const handleCheckout = useCallback(() => {
-    pixelEvent('InitiateCheckout', { value: 19.90, currency: 'BRL', num_items: 1 })
+    pixelEvent('InitiateCheckout', { value: 12.90, currency: 'BRL', num_items: 1 })
     let url = appendUTMToUrl(CHECKOUT_BASE, readUTM())
     // job_id garante que o webhook vincule EXATAMENTE este pedido ao pagamento
     if (store.jobId) {
