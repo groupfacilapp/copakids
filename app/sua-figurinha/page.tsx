@@ -95,7 +95,14 @@ export default function SuaFigurinhaPage() {
   const birthDate = formatBirthDate(store.birthDay, store.birthMonth, store.birthYear)
   const playerNumber = getPlayerNumber(store.name)
 
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
     // Redirect if no data
     if (!store.name) {
       router.replace('/')
@@ -109,7 +116,7 @@ export default function SuaFigurinhaPage() {
 
     // Pixel: usuário chegou à página da figurinha = ViewContent
     pixelEvent('ViewContent', { content_name: 'Figurinha Copa 2026', value: 12.90, currency: 'BRL' })
-  }, [store.name, router])
+  }, [store.name, router, mounted])
 
   const SHARE_LINK = 'https://www.convocakids.com/?utm_source=whatsapp&utm_medium=referral&utm_campaign=indicacao'
   const [copied, setCopied] = useState(false)
@@ -146,7 +153,7 @@ export default function SuaFigurinhaPage() {
     router.push('/criar')
   }, [store, router])
 
-  if (!store.name) return null
+  if (!mounted || !store.name) return null
 
   return (
     <main className="min-h-screen bg-hero bg-hero-mesh">
