@@ -75,6 +75,20 @@ export const useFigurinhaStore = create<FigurinhaStore>()(
     }),
     {
       name: 'figurinha-copa-2026',
+      // Exclui dados grandes (base64) do localStorage para evitar quota exceeded
+      // photo e stickerUrl podem ter 3-5MB cada — localStorage só suporta ~5MB
+      partialize: (state) => ({
+        name: state.name,
+        birthDay: state.birthDay,
+        birthMonth: state.birthMonth,
+        birthYear: state.birthYear,
+        email: state.email,
+        club: state.club,
+        weight: state.weight,
+        height: state.height,
+        jobId: state.jobId,
+        generationId: state.generationId,
+      }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true)
       }

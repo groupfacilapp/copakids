@@ -9,7 +9,7 @@ import { Testimonials } from '@/components/Testimonials'
 import { readUTM, appendUTMToUrl } from '@/lib/utm'
 import { pixelEvent } from '@/lib/pixel'
 
-const CHECKOUT_BASE = process.env.NEXT_PUBLIC_CHECKOUT_URL ?? 'https://pay.kiwify.com.br/yRmTtd1'
+const CHECKOUT_BASE = process.env.NEXT_PUBLIC_CHECKOUT_URL || 'https://pay.kiwify.com.br/yRmTtd1'
 const PRICE         = process.env.NEXT_PUBLIC_PRICE         ?? '12,90'
 const PRICE_ORIG    = process.env.NEXT_PUBLIC_PRICE_ORIGINAL ?? '39,90'
 
@@ -141,11 +141,14 @@ export default function SuaFigurinhaPage() {
     let url = appendUTMToUrl(CHECKOUT_BASE, readUTM())
     // job_id garante que o webhook vincule EXATAMENTE este pedido ao pagamento
     if (store.jobId) {
-      const u = new URL(url)
-      u.searchParams.set('job_id', store.jobId)
-      url = u.toString()
+      try {
+        const u = new URL(url)
+        u.searchParams.set('job_id', store.jobId)
+        url = u.toString()
+      } catch { /* URL inválida, usa sem job_id */ }
     }
-    window.location.href = url
+    // Abre em nova aba para não perder a /sua-figurinha caso o usuário volte
+    window.open(url, '_blank', 'noopener')
   }, [store.jobId])
 
   const handleNovaFigurinha = useCallback(() => {
