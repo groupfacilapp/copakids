@@ -258,25 +258,34 @@ export default function SuaFigurinhaPage() {
               <div
                 className="rounded-2xl mb-5"
                 style={{
-                  background: 'rgba(13,27,75,0.06)',
-                  border: '1.5px solid rgba(13,27,75,0.12)',
+                  background: 'linear-gradient(135deg, rgba(0,155,58,0.08) 0%, rgba(0,122,46,0.03) 100%)',
+                  border: '1.5px solid rgba(0, 155, 58, 0.28)',
                   padding: '16px 18px',
+                  boxShadow: '0 8px 30px rgba(0,155,58,0.06)',
                 }}
               >
-                <p style={{ fontFamily: 'var(--font-bebas)', fontSize: 16, color: '#009B3A', letterSpacing: 1, marginBottom: 10, textAlign: 'center' }}>
-                  ✅ COMO RECEBER SEM MARCA D'ÁGUA:
+                <p style={{ fontFamily: 'var(--font-bebas)', fontSize: 17, color: '#009B3A', letterSpacing: 1.2, marginBottom: 12, textAlign: 'center' }}>
+                  📲 ENTREGA GARANTIDA NO SEU WHATSAPP
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[
-                    ['1.', 'Clique no botão abaixo e finalize o pagamento'],
-                    ['2.', 'Receba o link de download no seu WhatsApp e E-mail na hora'],
-                    ['3.', 'Baixe em 4K sem marca d\'água — pronta para imprimir e colar'],
-                  ].map(([num, txt]) => (
-                    <div key={num} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                      <span style={{ fontFamily: 'var(--font-bebas)', fontSize: 15, color: '#009B3A', minWidth: 18 }}>{num}</span>
-                      <span style={{ fontFamily: 'var(--font-barlow)', fontSize: 13, fontWeight: 600, color: 'rgba(13,27,75,0.7)', lineHeight: 1.4 }}>{txt}</span>
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ fontFamily: 'var(--font-bebas)', fontSize: 15, color: '#009B3A', minWidth: 18 }}>1.</span>
+                    <span style={{ fontFamily: 'var(--font-barlow)', fontSize: 13.5, fontWeight: 600, color: '#0D1B4B', lineHeight: 1.4 }}>
+                      Finalize o pagamento no botão abaixo.
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ fontFamily: 'var(--font-bebas)', fontSize: 15, color: '#009B3A', minWidth: 18 }}>2.</span>
+                    <span style={{ fontFamily: 'var(--font-barlow)', fontSize: 14, fontWeight: 700, color: '#0D1B4B', lineHeight: 1.4 }}>
+                      Receba na hora o link de download no seu <span style={{ color: '#009B3A' }}>WhatsApp</span> e <span style={{ color: '#009B3A' }}>E-mail</span>.
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ fontFamily: 'var(--font-bebas)', fontSize: 15, color: '#009B3A', minWidth: 18 }}>3.</span>
+                    <span style={{ fontFamily: 'var(--font-barlow)', fontSize: 13.5, fontWeight: 600, color: 'rgba(13,27,75,0.7)', lineHeight: 1.4 }}>
+                      Baixe em <b>alta resolução (4K) sem marca d'água</b>, pronta para imprimir ou compartilhar!
+                    </span>
+                  </div>
                 </div>
               </div>
 

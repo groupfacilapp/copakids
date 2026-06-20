@@ -240,8 +240,14 @@ export default function LandingPage() {
             className="flex items-center justify-center flex-wrap gap-4 mt-6 animate-fade-in-up"
             style={{ animationDelay: '400ms' }}
           >
-            {['✅ Arquivo digital', '📲 Receba no WhatsApp e E-mail', '🔒 Pagamento seguro'].map((item) => (
-              <span key={item} className="trust-item">{item}</span>
+            {['✅ Arquivo digital', '📲 Receba no WhatsApp e E-mail', '🔒 Pagamento seguro'].map((item, i) => (
+              <span
+                key={item}
+                className="trust-item"
+                style={i === 1 ? { background: 'rgba(0,155,58,0.1)', color: '#008F35', padding: '4px 10px', borderRadius: 8, border: '1px solid rgba(0,155,58,0.2)' } : undefined}
+              >
+                {item}
+              </span>
             ))}
           </div>
         </div>

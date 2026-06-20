@@ -588,14 +588,17 @@ export default function CriarPage() {
                   <div
                     style={{
                       marginTop: 8,
-                      padding: '8px 12px',
-                      borderRadius: 10,
-                      background: 'rgba(255, 213, 0, 0.12)',
-                      border: '1px solid rgba(255, 213, 0, 0.35)',
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      background: 'rgba(0, 155, 58, 0.08)',
+                      border: '1.5px solid rgba(0, 155, 58, 0.3)',
                     }}
                   >
-                    <p style={{ fontSize: 12, color: '#7A5C00', fontWeight: 700, margin: 0, lineHeight: 1.5 }}>
-                      ⚠️ Sua figurinha será enviada automaticamente no seu WhatsApp e no seu E-mail após o pagamento! Use os mesmos dados na hora da compra.
+                    <p style={{ fontSize: 12.5, color: '#007A2E', fontWeight: 800, margin: 0, lineHeight: 1.5 }}>
+                      📲 ENTREGA AUTOMÁTICA NO WHATSAPP & E-MAIL
+                    </p>
+                    <p style={{ fontSize: 11.5, color: 'rgba(13,27,75,0.7)', fontWeight: 600, margin: '4px 0 0', lineHeight: 1.45 }}>
+                      Sua figurinha oficial é enviada <b>automaticamente</b> para seu <b>WhatsApp</b> e <b>E-mail</b> logo após o pagamento! Use os mesmos dados na hora da compra.
                     </p>
                   </div>
                 </div>
