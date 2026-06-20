@@ -296,6 +296,21 @@ export default function CriarPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Sync store data to local state once hydrated
+  useEffect(() => {
+    if (store._hasHydrated) {
+      if (store.name) setName(store.name)
+      if (store.photo) setPhoto(store.photo)
+      if (store.birthDay) setBirthDay(store.birthDay)
+      if (store.birthMonth) setBirthMonth(store.birthMonth)
+      if (store.birthYear) setBirthYear(store.birthYear)
+      if (store.email) setEmail(store.email)
+      if (store.club) setClub(store.club)
+      if (store.weight) setWeight(store.weight)
+      if (store.height) setHeight(store.height)
+    }
+  }, [store._hasHydrated, store.name, store.photo, store.birthDay, store.birthMonth, store.birthYear, store.email, store.club, store.weight, store.height])
+
   const galleryRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
 

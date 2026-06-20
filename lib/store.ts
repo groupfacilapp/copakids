@@ -19,6 +19,7 @@ export interface FigurinhaData {
 
 interface FigurinhaStore extends FigurinhaData {
   generationId: number
+  _hasHydrated: boolean
   setName: (v: string) => void
   setPhoto: (v: string | null) => void
   setBirthDay: (v: string) => void
@@ -31,6 +32,7 @@ interface FigurinhaStore extends FigurinhaData {
   setStickerUrl: (v: string | null) => void
   setJobId: (v: string | null) => void
   setAll: (data: FigurinhaData) => void
+  setHasHydrated: (v: boolean) => void
   nextGeneration: () => void
   reset: () => void
 }
@@ -54,6 +56,7 @@ export const useFigurinhaStore = create<FigurinhaStore>()(
     (set, get) => ({
       ...initial,
       generationId: 0,
+      _hasHydrated: false,
       setName: (name) => set({ name }),
       setPhoto: (photo) => set({ photo }),
       setBirthDay: (birthDay) => set({ birthDay }),
@@ -66,11 +69,15 @@ export const useFigurinhaStore = create<FigurinhaStore>()(
       setStickerUrl: (stickerUrl) => set({ stickerUrl }),
       setJobId: (jobId) => set({ jobId }),
       setAll: (data) => set(data),
+      setHasHydrated: (_hasHydrated) => set({ _hasHydrated }),
       nextGeneration: () => set({ generationId: get().generationId + 1 }),
       reset: () => set(initial),
     }),
     {
       name: 'figurinha-copa-2026',
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
+      }
     }
   )
 )

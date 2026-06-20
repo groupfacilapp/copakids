@@ -102,7 +102,7 @@ export default function SuaFigurinhaPage() {
   }, [])
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted || !store._hasHydrated) return
     // Redirect if no data
     if (!store.name) {
       router.replace('/')
@@ -116,7 +116,7 @@ export default function SuaFigurinhaPage() {
 
     // Pixel: usuário chegou à página da figurinha = ViewContent
     pixelEvent('ViewContent', { content_name: 'Figurinha Copa 2026', value: 12.90, currency: 'BRL' })
-  }, [store.name, router, mounted])
+  }, [store.name, store._hasHydrated, router, mounted])
 
   const SHARE_LINK = 'https://www.convocakids.com/?utm_source=whatsapp&utm_medium=referral&utm_campaign=indicacao'
   const [copied, setCopied] = useState(false)
@@ -153,7 +153,7 @@ export default function SuaFigurinhaPage() {
     router.push('/criar')
   }, [store, router])
 
-  if (!mounted || !store.name) return null
+  if (!mounted || !store._hasHydrated || !store.name) return null
 
   return (
     <main className="min-h-screen bg-hero bg-hero-mesh">

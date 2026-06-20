@@ -95,7 +95,7 @@ export default function GerandoPage() {
   }, [stage, progress])
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted || !store._hasHydrated) return
     if (!store.name || !store.photo) { router.replace('/criar'); return }
     if (called.current === store.generationId) return
     called.current = store.generationId
@@ -200,7 +200,9 @@ export default function GerandoPage() {
 
     run()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.generationId, mounted])
+  }, [store.generationId, store._hasHydrated, mounted])
+
+  if (!mounted || !store._hasHydrated) return null
 
   if (error) {
     return (
