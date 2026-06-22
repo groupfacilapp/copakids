@@ -10,6 +10,7 @@ export interface FigurinhaData {
   birthMonth: string
   birthYear: string
   email: string
+  phone: string
   club: string
   weight: string
   height: string
@@ -26,6 +27,7 @@ interface FigurinhaStore extends FigurinhaData {
   setBirthMonth: (v: string) => void
   setBirthYear: (v: string) => void
   setEmail: (v: string) => void
+  setPhone: (v: string) => void
   setClub: (v: string) => void
   setWeight: (v: string) => void
   setHeight: (v: string) => void
@@ -44,6 +46,7 @@ const initial: FigurinhaData = {
   birthMonth: '',
   birthYear: '',
   email: '',
+  phone: '',
   club: '',
   weight: '',
   height: '',
@@ -63,6 +66,7 @@ export const useFigurinhaStore = create<FigurinhaStore>()(
       setBirthMonth: (birthMonth) => set({ birthMonth }),
       setBirthYear: (birthYear) => set({ birthYear }),
       setEmail: (email) => set({ email }),
+      setPhone: (phone) => set({ phone }),
       setClub: (club) => set({ club }),
       setWeight: (weight) => set({ weight }),
       setHeight: (height) => set({ height }),
@@ -83,6 +87,7 @@ export const useFigurinhaStore = create<FigurinhaStore>()(
         birthMonth: state.birthMonth,
         birthYear: state.birthYear,
         email: state.email,
+        phone: state.phone,
         club: state.club,
         weight: state.weight,
         height: state.height,

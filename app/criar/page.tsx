@@ -290,6 +290,7 @@ export default function CriarPage() {
   const [birthMonth, setBirthMonth] = useState(store.birthMonth)
   const [birthYear, setBirthYear] = useState(store.birthYear)
   const [email, setEmail] = useState(store.email)
+  const [phone, setPhone] = useState(store.phone)
 
   const [club, setClub] = useState(store.club)
   const [weight, setWeight] = useState(store.weight)
@@ -306,11 +307,12 @@ export default function CriarPage() {
       if (store.birthMonth) setBirthMonth(store.birthMonth)
       if (store.birthYear) setBirthYear(store.birthYear)
       if (store.email) setEmail(store.email)
+      if (store.phone) setPhone(store.phone)
       if (store.club) setClub(store.club)
       if (store.weight) setWeight(store.weight)
       if (store.height) setHeight(store.height)
     }
-  }, [store._hasHydrated, store.name, store.photo, store.birthDay, store.birthMonth, store.birthYear, store.email, store.club, store.weight, store.height])
+  }, [store._hasHydrated, store.name, store.photo, store.birthDay, store.birthMonth, store.birthYear, store.email, store.phone, store.club, store.weight, store.height])
 
   const galleryRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
@@ -384,6 +386,9 @@ export default function CriarPage() {
     if (!birthYear) e.birthYear = 'x'
     if (!email.trim()) e.email = 'Digite seu e-mail'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'E-mail inválido'
+    const rawPhone = phone.replace(/\D/g, '')
+    if (!rawPhone) e.phone = 'Digite seu WhatsApp'
+    else if (rawPhone.length < 10) e.phone = 'Número inválido'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -405,7 +410,7 @@ export default function CriarPage() {
   }
 
   const handleConfirm = () => {
-    store.setAll({ name: name.trim(), photo, birthDay, birthMonth, birthYear, email: email.trim(), club: club.trim(), weight, height, stickerUrl: null, jobId: null })
+    store.setAll({ name: name.trim(), photo, birthDay, birthMonth, birthYear, email: email.trim(), phone: phone.replace(/\D/g, ''), club: club.trim(), weight, height, stickerUrl: null, jobId: null })
     store.nextGeneration()
     router.push('/gerando')
   }
@@ -601,6 +606,30 @@ export default function CriarPage() {
                   {errors.email && (
                     <p style={{ color: '#E53E3E', fontSize: 12.5, marginTop: 5, fontWeight: 600 }}>⚠ {errors.email}</p>
                   )}
+                </div>
+
+                <div className="mb-6">
+                  <label style={{ fontFamily: 'var(--font-bebas)', fontSize: 15, letterSpacing: 1, color: '#0D1B4B', display: 'block', marginBottom: 6 }}>SEU WHATSAPP</label>
+                  <input
+                    className={`copa-input ${errors.phone ? 'error' : ''}`}
+                    type="tel" inputMode="numeric"
+                    placeholder="(11) 99999-9999"
+                    value={phone}
+                    onChange={(e) => {
+                      // máscara simples de celular BR
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
+                      let masked = digits
+                      if (digits.length > 6) masked = `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`
+                      else if (digits.length > 2) masked = `(${digits.slice(0,2)}) ${digits.slice(2)}`
+                      else if (digits.length > 0) masked = `(${digits}`
+                      setPhone(masked)
+                      setErrors((p) => ({ ...p, phone: '' }))
+                    }}
+                    autoComplete="tel"
+                  />
+                  {errors.phone && (
+                    <p style={{ color: '#E53E3E', fontSize: 12.5, marginTop: 5, fontWeight: 600 }}>⚠ {errors.phone}</p>
+                  )}
                   <div
                     style={{
                       marginTop: 8,
@@ -611,7 +640,7 @@ export default function CriarPage() {
                     }}
                   >
                     <p style={{ fontSize: 12.5, color: '#007A2E', fontWeight: 800, margin: 0, lineHeight: 1.5 }}>
-                      📲 ENTREGA AUTOMÁTICA NO WHATSAPP & E-MAIL
+                      📲 ENTREGA AUTOMÁTICA NO WHATSAPP &amp; E-MAIL
                     </p>
                     <p style={{ fontSize: 11.5, color: 'rgba(13,27,75,0.7)', fontWeight: 600, margin: '4px 0 0', lineHeight: 1.45 }}>
                       Sua figurinha oficial é enviada <b>automaticamente</b> para seu <b>WhatsApp</b> e <b>E-mail</b> logo após o pagamento! Use os mesmos dados na hora da compra.
@@ -741,6 +770,7 @@ export default function CriarPage() {
                     { label: 'PESO',       value: weight ? `${weight} kg` : '—' },
                     { label: 'ALTURA',     value: height ? `${height} cm` : '—' },
                     { label: 'CLUBE',      value: club || '—' },
+                    { label: 'WHATSAPP',   value: phone || '—' },
                     { label: 'E-MAIL',     value: email || '—' },
                   ].map(({ label, value }, i, arr) => (
                     <div
