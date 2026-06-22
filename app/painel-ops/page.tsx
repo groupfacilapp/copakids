@@ -148,6 +148,9 @@ export default function AdminPage() {
         body: JSON.stringify({ order_id: order.id, phone: phone || undefined }),
       })
       const data = await res.json()
+      if (res.ok && phone) {
+        setOrders(prev => prev.map(o => o.id === order.id ? { ...o, phone } : o))
+      }
       setWaResendMsg(p => ({ ...p, [order.id]: res.ok ? '✅ Enviado!' : `⚠ ${data.error ?? 'Erro'}` }))
     } catch {
       setWaResendMsg(p => ({ ...p, [order.id]: '⚠ Erro' }))
@@ -169,6 +172,9 @@ export default function AdminPage() {
         body: JSON.stringify({ order_id: order.id, phone: phone || undefined }),
       })
       const data = await res.json()
+      if (res.ok && phone) {
+        setOrders(prev => prev.map(o => o.id === order.id ? { ...o, phone } : o))
+      }
       setWaFollowMsg(p => ({ ...p, [order.id]: res.ok ? '✅ Enviado!' : `⚠ ${data.error ?? 'Erro'}` }))
     } catch {
       setWaFollowMsg(p => ({ ...p, [order.id]: '⚠ Erro' }))
