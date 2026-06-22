@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useFigurinhaStore, formatBirthDate } from '@/lib/store'
 
 const CLUBES = [
-  '🇧🇷 Brasil',
+  'Brasil',
   'Flamengo','Palmeiras','Corinthians','São Paulo',
   'Grêmio','Fluminense','Internacional','Santos',
 ]
