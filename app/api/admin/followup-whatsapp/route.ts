@@ -25,19 +25,13 @@ export async function POST(req: NextRequest) {
   const targetPhone = phone || order.phone
   if (!targetPhone) return NextResponse.json({ error: 'phone number missing' }, { status: 422 })
 
-  const primeiroNome = order.nome ? order.nome.split(' ')[0] : null
-  const saudacao = primeiroNome ? `Oi, *${primeiroNome}*!` : 'Oi!'
+  const host = req.headers.get('host') ?? 'copakids-ashen.vercel.app'
+  const protocol = req.headers.get('x-forwarded-proto') ?? 'https'
+  const dynamicBaseUrl = `${protocol}://${host}`
 
-  const checkoutUrl = siteConfig.checkoutUrl ?? 'https://www.convocakids.com/'
-
-  const waMessage =
-    `${saudacao} 👋\n\n` +
-    `Notei que você criou a figurinha personalizada do seu filho para a Copa 2026, mas ainda não finalizou a compra. 😢⚽\n\n` +
-    `Sua figurinha está *reservada e pronta* para ser entregue — falta só um passo!\n\n` +
-    `🎁 *Garanta agora por apenas R$ ${siteConfig.price ?? '12,90'}:*\n` +
-    `👉 ${checkoutUrl}\n\n` +
-    `Após o pagamento, você recebe o arquivo em alta resolução direto aqui no WhatsApp e no e-mail, na hora. 📲\n\n` +
-    `Qualquer dúvida é só responder aqui! 🏆`
+  const waName = order.nome ?? 'Torcedor(a)'
+  const checkoutUrl = `${siteConfig.checkoutUrl}?job_id=${order.job_id}&utm_source=followup&utm_medium=whatsapp`
+  const waMessage = `Olá, *${waName}*! ⚽\n\nSua figurinha personalizada da Copa 2026 está pronta!\n\nVocê pode finalizar o pagamento para liberar o download da figurinha em alta resolução sem marca d'água no link abaixo:\n👉 ${checkoutUrl}\n\nGaranta a sua para imprimir e colar! 🏆`
 
   const res = await sendWhatsAppMessage({
     phone: targetPhone,
