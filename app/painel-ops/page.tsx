@@ -88,6 +88,8 @@ export default function AdminPage() {
   const [waResendMsg, setWaResendMsg] = useState<Record<string, string>>({})
   const [following, setFollowing] = useState<string | null>(null)
   const [followMsg, setFollowMsg] = useState<Record<string, string>>({})
+  const [waFollowing, setWaFollowing] = useState<string | null>(null)
+  const [waFollowMsg, setWaFollowMsg] = useState<Record<string, string>>({})
   const [filter, setFilter]   = useState<'all' | 'paid' | 'unpaid'>('all')
 
   const load = useCallback(async (sec = secret) => {
@@ -151,6 +153,27 @@ export default function AdminPage() {
       setWaResendMsg(p => ({ ...p, [order.id]: '⚠ Erro' }))
     } finally {
       setWaResending(null)
+    }
+  }, [secret])
+
+  const sendFollowupWhatsApp = useCallback(async (order: Order) => {
+    const defaultPhone = order.phone || ''
+    const phone = window.prompt('Confirmar telefone do WhatsApp para recuperação (somente números com DDD):', defaultPhone)
+    if (phone === null) return
+
+    setWaFollowing(order.id); setWaFollowMsg(p => ({ ...p, [order.id]: '' }))
+    try {
+      const res = await fetch('/api/admin/followup-whatsapp', {
+        method: 'POST',
+        headers: { 'x-admin-secret': secret, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: order.id, phone: phone || undefined }),
+      })
+      const data = await res.json()
+      setWaFollowMsg(p => ({ ...p, [order.id]: res.ok ? '✅ Enviado!' : `⚠ ${data.error ?? 'Erro'}` }))
+    } catch {
+      setWaFollowMsg(p => ({ ...p, [order.id]: '⚠ Erro' }))
+    } finally {
+      setWaFollowing(null)
     }
   }, [secret])
 
@@ -427,7 +450,7 @@ export default function AdminPage() {
                     {waResending === order.id ? '...' : waResendMsg[order.id] || '💬'}
                   </button>
                 )}
-                {/* Follow-up (pendentes que geraram) */}
+                {/* Follow-up email (pendentes que geraram) */}
                 {!order.paid && order.job_id && order.email && (
                   order.followup_sent_at || followMsg[order.id]?.startsWith('✅') ? (
                     <span style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700,
@@ -436,12 +459,22 @@ export default function AdminPage() {
                     </span>
                   ) : (
                     <button onClick={() => sendFollowup(order)} disabled={following === order.id}
-                      title={`Enviar follow-up para ${order.email}`}
+                      title={`Enviar follow-up por e-mail para ${order.email}`}
                       style={{ padding: '6px 12px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: following === order.id ? 'wait' : 'pointer',
                         background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>
                       {following === order.id ? '...' : '📩'}
                     </button>
                   )
+                )}
+                {/* Follow-up WhatsApp (pendentes que geraram) */}
+                {!order.paid && order.job_id && (
+                  <button onClick={() => sendFollowupWhatsApp(order)} disabled={waFollowing === order.id}
+                    title={order.phone ? `Enviar follow-up por WhatsApp para ${order.phone}` : 'Enviar WhatsApp de cobrança'}
+                    style={{ padding: '6px 12px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 700, cursor: waFollowing === order.id ? 'wait' : 'pointer',
+                      background: waFollowMsg[order.id]?.startsWith('✅') ? 'rgba(74,222,128,0.15)' : 'rgba(34,197,94,0.15)',
+                      color: waFollowMsg[order.id]?.startsWith('✅') ? '#4ade80' : '#22c55e' }}>
+                    {waFollowing === order.id ? '...' : waFollowMsg[order.id] || '📲'}
+                  </button>
                 )}
               </div>
             </div>

@@ -616,12 +616,19 @@ export default function CriarPage() {
                     placeholder="(11) 99999-9999"
                     value={phone}
                     onChange={(e) => {
-                      // máscara simples de celular BR
                       const digits = e.target.value.replace(/\D/g, '').slice(0, 11)
-                      let masked = digits
-                      if (digits.length > 6) masked = `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`
-                      else if (digits.length > 2) masked = `(${digits.slice(0,2)}) ${digits.slice(2)}`
-                      else if (digits.length > 0) masked = `(${digits}`
+                      let masked = ''
+                      if (digits.length === 0) {
+                        masked = ''
+                      } else if (digits.length <= 2) {
+                        masked = `(${digits}`
+                      } else if (digits.length <= 6) {
+                        masked = `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+                      } else if (digits.length <= 10) {
+                        masked = `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+                      } else {
+                        masked = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+                      }
                       setPhone(masked)
                       setErrors((p) => ({ ...p, phone: '' }))
                     }}

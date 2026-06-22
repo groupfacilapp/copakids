@@ -14,7 +14,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
-    const allowed = await rateLimit(`start:${ip}`, 5, 3600)
+    const allowed = await rateLimit(`start:${ip}`, 20, 3600)
     if (!allowed) {
       return NextResponse.json({ error: 'Muitas tentativas. Tente novamente em 1 hora.' }, { status: 429 })
     }

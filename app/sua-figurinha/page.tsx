@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFigurinhaStore, formatBirthDate, getPlayerNumber } from '@/lib/store'
@@ -96,6 +96,8 @@ export default function SuaFigurinhaPage() {
   const playerNumber = getPlayerNumber(store.name)
 
   const [mounted, setMounted] = useState(false)
+  // Garante que o redirect-guard roda UMA única vez após hidratação
+  const redirectChecked = useRef(false)
 
   useEffect(() => {
     setMounted(true)
@@ -103,7 +105,10 @@ export default function SuaFigurinhaPage() {
 
   useEffect(() => {
     if (!mounted || !store._hasHydrated) return
-    // Redirect if no data
+    if (redirectChecked.current) return   // já verificou — não executa de novo
+    redirectChecked.current = true
+
+    // Redirect se não houver dados (usuário entrou direto na URL)
     if (!store.name) {
       router.replace('/')
       return
@@ -116,7 +121,8 @@ export default function SuaFigurinhaPage() {
 
     // Pixel: usuário chegou à página da figurinha = ViewContent
     pixelEvent('ViewContent', { content_name: 'Figurinha Copa 2026', value: 12.90, currency: 'BRL' })
-  }, [store.name, store._hasHydrated, router, mounted])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, store._hasHydrated])
 
   const SHARE_LINK = 'https://www.convocakids.com/?utm_source=whatsapp&utm_medium=referral&utm_campaign=indicacao'
   const [copied, setCopied] = useState(false)
@@ -138,16 +144,28 @@ export default function SuaFigurinhaPage() {
 
   const handleCheckout = useCallback(() => {
     pixelEvent('InitiateCheckout', { value: 12.90, currency: 'BRL', num_items: 1 })
-    let url = appendUTMToUrl(CHECKOUT_BASE, readUTM())
-    // job_id garante que o webhook vincule EXATAMENTE este pedido ao pagamento
+
+    // Garante URL absoluta válida — string relativa causaria navegação para home
+    let url: string
+    try {
+      const base = new URL(CHECKOUT_BASE)
+      if (!base.protocol.startsWith('http')) throw new Error('protocolo inválido')
+      url = appendUTMToUrl(CHECKOUT_BASE, readUTM())
+    } catch {
+      // CHECKOUT_BASE inválido — usa URL de fallback hardcoded
+      url = 'https://pay.wiapy.com/OLuwMAnuQiz'
+    }
+
+    // Adiciona job_id para vincular compra ao pedido correto
     if (store.jobId) {
       try {
         const u = new URL(url)
         u.searchParams.set('job_id', store.jobId)
         url = u.toString()
-      } catch { /* URL inválida, usa sem job_id */ }
+      } catch { /* mantém url sem job_id */ }
     }
-    // Abre em nova aba para não perder a /sua-figurinha caso o usuário volte
+
+    // Abre em nova aba — página da figurinha permanece aberta
     window.open(url, '_blank', 'noopener')
   }, [store.jobId])
 
