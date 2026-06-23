@@ -37,10 +37,19 @@ export async function POST(req: NextRequest) {
     const { rembgUrl, utm_params } = body
     const nome   = cap(body.nome)
     const email  = cap(body.email, 254)
+    const phone  = cap(body.phone, 25)
     const data   = cap(body.data,   20)
     const altura = cap(body.altura, 10)
     const peso   = cap(body.peso,   10)
     const clube  = cap(body.clube,  60)
+
+    const rawPhone = phone.replace(/\D/g, '')
+    if (!rawPhone) {
+      return NextResponse.json({ error: 'Telefone/WhatsApp é obrigatório' }, { status: 400 })
+    }
+    if (rawPhone.length < 10) {
+      return NextResponse.json({ error: 'Número de WhatsApp inválido' }, { status: 400 })
+    }
 
     if (!rembgUrl) return NextResponse.json({ error: 'rembgUrl obrigatório' }, { status: 400 })
     if (!isTrustedImageUrl(rembgUrl)) {
@@ -56,7 +65,7 @@ export async function POST(req: NextRequest) {
     })
 
     const jobId = await saveJob({
-      nome, email: email ?? '', clube, data, altura, peso, rembgUrl, paid: false,
+      nome, email: email ?? '', phone: rawPhone, clube, data, altura, peso, rembgUrl, paid: false,
     })
 
     try {
@@ -70,6 +79,7 @@ export async function POST(req: NextRequest) {
       await sb.from('orders').insert({
         job_id: jobId,
         email: email ?? null,
+        phone: rawPhone,
         nome: nome ?? null,
         dados_figurinha: { data, altura, peso, clube },
         storage_path: storagePath,

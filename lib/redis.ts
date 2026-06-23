@@ -4,6 +4,7 @@ export interface FigurinhaJob {
   id: string
   nome: string
   email: string
+  phone?: string
   clube: string
   data: string
   altura: string

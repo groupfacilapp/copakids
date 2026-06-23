@@ -96,7 +96,7 @@ export default function GerandoPage() {
 
   useEffect(() => {
     if (!mounted || !store._hasHydrated) return
-    if (!store.name || !store.photo) { router.replace('/criar'); return }
+    if (!store.name || !store.photo || !store.phone) { router.replace('/criar'); return }
     if (called.current === store.generationId) return
     called.current = store.generationId
 
@@ -169,6 +169,7 @@ export default function GerandoPage() {
             rembgUrl,
             nome:       store.name.toUpperCase(),
             email:      store.email,
+            phone:      store.phone,
             data:       birthDate,
             altura:     heightM,
             peso:       weightKg,
